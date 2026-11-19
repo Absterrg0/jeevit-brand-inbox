@@ -5,8 +5,10 @@ export const cx = (...parts: (string | false | null | undefined)[]) => parts.fil
 
 export const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`
 
+export const money = (amount: number, currency: string) => (currency === 'USD' ? `$${amount.toLocaleString('en-US')}` : inr(amount))
+
 export function offerText(terms: Terms): string {
-  if (terms.fee) return terms.fee.currency === 'USD' ? `$${terms.fee.amount.toLocaleString('en-US')}` : inr(terms.fee.amount)
+  if (terms.fee) return money(terms.fee.amount, terms.fee.currency)
   if (terms.giftValue) return `Gift worth ${inr(terms.giftValue.inr)}`
   if (terms.paymentType === 'gifting') return 'Gifting only'
   return 'No fee stated'

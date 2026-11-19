@@ -229,7 +229,7 @@ src/core/               deterministic, no network, unit-tested
 src/pipeline.ts         the nine steps, in order
 src/cli/                analyze, eval
 src/eval/score.ts       scoring against labels
-web/                    the UI (React + Vite + Tailwind), reads out/analysis.json
+web/                    the UI (React + Vite, hand-written CSS), reads out/analysis.json
 eval/                   labels, held-out set, generated report
 recordings/             recorded model responses
 tests/                  56 tests

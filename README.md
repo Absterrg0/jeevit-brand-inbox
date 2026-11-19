@@ -2,6 +2,8 @@
 
 Reads a creator's brand inbox and says, for each email, what it is, what the deal actually says, what is risky about it and what to do next. A language model does the reading. Plain code does everything that has to be right.
 
+**Live demo of the UI:** https://jeevit-brand-inbox.parvj.workers.dev (static build of the recorded run; no key, nothing is sent)
+
 ![Today view](docs/today-desktop.png)
 
 ## Run it
@@ -207,7 +209,7 @@ I built this by directing AI coding agents, including Claude (Claude Code), rath
 - The first version came from a weaker model with little steering: a regex rules engine and a self-graded 15/15. I judged that unconvincing and had it rebuilt.
 - For the rebuild I set the direction: the model/code boundary, a free model behind one interface, recorded responses, hand labels before results, a separate held-out set, failing closed. The agent wrote the code, ran the model, read its raw outputs, and proposed the changes described above when the first real runs failed.
 - The hand labels and the held-out emails were also drafted by the agent, from reading the emails, and committed before the pipeline was run on them. They are my responsibility to stand behind, and the debatable ones are marked.
-- The UI was built by the agent against a design reference I supplied, and checked with real browser screenshots at desktop and phone widths.
+- The UI was built by the agent against a design reference I supplied, and went through several rounds where I rejected layouts as too busy or too generic. Each round was checked with real browser screenshots at desktop and phone widths.
 - What I would not delegate: deciding that the first version was not good enough, what counts as evidence in the evaluation, and which failures to report.
 
 ## Layout
@@ -233,7 +235,7 @@ recordings/             recorded model responses
 tests/                  56 tests
 ```
 
-The UI is a bonus, and deliberately one page: four counts (reply, decline, report, ignore) that also filter, then one list in priority order. A card opens in place to show the terms, each reason with the quoted evidence, and a draft to copy. Light and dark, desktop and phone.
+The UI is a bonus: one page that renders `out/analysis.json` and nothing else, so it cannot disagree with the CLI. It opens on today's brief, lists the deals grouped by what to do, and shows each deal's terms, every reason with the quoted evidence, and a draft to copy (scams get a warning instead of a draft). Light and dark, desktop and phone. It is a static build, deployed to Cloudflare at the link above.
 
 | | |
 | --- | --- |

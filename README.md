@@ -23,6 +23,16 @@ cp .env.example .env            # set ONE of GROQ_API_KEY / GEMINI_API_KEY / OPE
 npm run analyze -- --live
 ```
 
+**Run it on a local model instead (free, offline, no key):** install [Ollama](https://ollama.com), then
+
+```bash
+ollama pull qwen2.5:7b
+LLM_PROVIDER=ollama npm run analyze -- --fresh   # re-reads every email with the local model
+npm run eval                                     # score that run
+```
+
+Any Ollama model works via `LLM_MODEL=...`. Expect minutes per email on a laptop CPU, seconds with a GPU. This is how the archived `qwen2.5:7b` run in `eval/runs/` was produced; the scores it gets are in "Same pipeline, two models" below. Ollama is never chosen automatically; it has to be asked for.
+
 `--live` is cache-first: an email whose recording exists is not sent again. `--fresh` ignores the recordings. With no key, `--live` stops with an error pointing at `.env.example`. If you edit `data/inbox.json` without a model configured, the changed emails are reported as "could not be analysed" rather than guessed.
 
 | Output | What it is |
@@ -122,7 +132,7 @@ The same code, labels and held-out emails, scored with two models. The 7B run is
 | High-severity flags that should not be there | 3 | 0 |
 | Model time per email | about 3 min (shared CPU) | about 2.2 s |
 
-On the main set both score 15/15 on category and 13/13 on action. Two things this shows. First, the code layer carries most of the decision: with a 7B model whose own category guess is right only 8/15 times, the pipeline still gets 13/15. Second, the 7B model's held-out misses were language problems (it did not recognise a pay-to-play kit purchase as a payment demand in H-10, read phone cases as competing with a smartphone exclusivity in H-05, and raised a conflict on H-06 it could not back with a quote, which correctly failed closed to `review_manually`); the larger model fixes those without any code change. The 120B run is the shipped default. The local provider was removed afterwards to keep one supported path; adding it back is a base-URL change in `src/llm/provider.ts`, because Ollama speaks the same OpenAI-compatible API.
+On the main set both score 15/15 on category and 13/13 on action. Two things this shows. First, the code layer carries most of the decision: with a 7B model whose own category guess is right only 8/15 times, the pipeline still gets 13/15. Second, the 7B model's held-out misses were language problems (it did not recognise a pay-to-play kit purchase as a payment demand in H-10, read phone cases as competing with a smartphone exclusivity in H-05, and raised a conflict on H-06 it could not back with a quote, which correctly failed closed to `review_manually`); the larger model fixes those without any code change. The 120B run is the shipped default. You can reproduce it with `LLM_PROVIDER=ollama` (see "Run it").
 
 **Run-to-run variance was not measured.** There is one recorded run per set at temperature 0, and a hosted model at temperature 0 is still not guaranteed to repeat itself. `npm run eval -- --variance 3` re-runs extraction on the main inbox and reports what changed; I ran out of time before the deadline to do it, so treat the table as a single sample.
 

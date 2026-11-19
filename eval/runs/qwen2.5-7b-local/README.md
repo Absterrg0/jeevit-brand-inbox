@@ -12,7 +12,7 @@ These files are copied unchanged from commit `035026c`:
 | `out-analysis.json`, `out-summary.md` | The pipeline output for the supplied inbox |
 | `recordings-*.json` | Every raw model response, with tokens and latency |
 
-The local-model provider was later removed from the code to keep one supported path, so this
-run cannot be replayed by the current CLI. The labels and the held-out emails are the same ones
+Reproduce it with `ollama pull qwen2.5:7b && LLM_PROVIDER=ollama npm run analyze -- --fresh`. Prompt
+versions have moved on since, so a new run will not match these files byte for byte. The labels and the held-out emails are the same ones
 used for the current Groq run, so the two runs compare directly. See "Same pipeline, two models"
 in the top-level README.

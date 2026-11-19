@@ -39,22 +39,24 @@ export const PRESETS: Record<string, Preset> = {
   groq: { baseUrl: 'https://api.groq.com/openai/v1', keyEnv: 'GROQ_API_KEY', defaultModel: 'openai/gpt-oss-120b' },
   gemini: { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', keyEnv: 'GEMINI_API_KEY', defaultModel: 'gemini-2.5-flash' },
   openrouter: { baseUrl: 'https://openrouter.ai/api/v1', keyEnv: 'OPENROUTER_API_KEY', defaultModel: 'meta-llama/llama-3.3-70b-instruct:free' },
+  // Local model, opt-in only (LLM_PROVIDER=ollama); never picked automatically. No key needed.
+  ollama: { baseUrl: 'http://localhost:11434/v1', keyEnv: '', defaultModel: 'qwen2.5:7b' },
 }
 
 /** LLM_PROVIDER if set, else the first provider with a key. No key is an error, never a silent fallback. */
 export function providerFromEnv(env: NodeJS.ProcessEnv = process.env): LlmProvider {
-  const name = env.LLM_PROVIDER ?? Object.keys(PRESETS).find((p) => env[PRESETS[p].keyEnv])
-  if (!name) throw new Error(`No model configured. Copy .env.example to .env and set one of ${Object.values(PRESETS).map((p) => p.keyEnv).join(', ')}.`)
+  const name = env.LLM_PROVIDER ?? Object.keys(PRESETS).find((p) => PRESETS[p].keyEnv && env[PRESETS[p].keyEnv])
+  if (!name) throw new Error(`No model configured. Copy .env.example to .env and set one of ${Object.values(PRESETS).map((p) => p.keyEnv).filter(Boolean).join(', ')}, or set LLM_PROVIDER=ollama for a local model.`)
   const preset = PRESETS[name]
   if (!preset) throw new Error(`Unknown LLM_PROVIDER "${name}". Use one of: ${Object.keys(PRESETS).join(', ')}.`)
-  const apiKey = env[preset.keyEnv]
+  const apiKey = preset.keyEnv ? env[preset.keyEnv] : 'ollama'
   if (!apiKey) throw new Error(`LLM_PROVIDER=${name} needs ${preset.keyEnv}. Copy .env.example to .env and set it.`)
   return openAiCompatible({
     name,
     baseUrl: env.LLM_BASE_URL ?? preset.baseUrl,
     apiKey,
     model: env.LLM_MODEL ?? preset.defaultModel,
-    timeoutMs: Number(env.LLM_TIMEOUT_MS ?? 60_000),
+    timeoutMs: Number(env.LLM_TIMEOUT_MS ?? (name === 'ollama' ? 600_000 : 60_000)),
   })
 }
 

@@ -258,6 +258,9 @@ kbd {
 .row.deal[aria-pressed='true'] .c-rank {
   opacity: 0.66;
 }
+.row.deal[aria-pressed='true'] > .c-due {
+  color: var(--paper);
+}
 .row.deal:focus-visible {
   outline-offset: -2px;
 }
@@ -517,9 +520,6 @@ kbd {
 }
 .terms dd {
   font-size: 15px;
-}
-.terms dd::first-letter {
-  text-transform: uppercase;
 }
 .terms s {
   color: var(--ink-3);

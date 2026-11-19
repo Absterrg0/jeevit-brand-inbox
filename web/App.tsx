@@ -180,11 +180,14 @@ function Panel({ deal, onClose }: { deal: Deal; onClose: () => void }) {
   const t = deal.terms
   const d = due(today, deal)
   const offer = offerText(t)
-  const usage = t.usage ? [t.usage.text, t.usage.perpetual && 'perpetual', t.usage.paidAds && 'paid ads', t.usage.whitelisting && 'whitelisting'].filter(Boolean) : []
+  const said = (t.usage?.text ?? '').toLowerCase()
+  const usage = t.usage
+    ? [t.usage.text, t.usage.perpetual && 'perpetual', t.usage.paidAds && 'paid ads', t.usage.whitelisting && 'whitelisting'].filter((u) => u && (u === t.usage!.text || !said.includes(u.replace('paid ads', 'ads'))))
+    : []
   const terms: [string, React.ReactNode][] = []
   if (scopeText(t)) terms.push(['Deliverables', scopeText(t)])
   if (t.product) terms.push(['For', t.product])
-  if (t.paymentType !== 'not_stated') terms.push(['Payment', t.paymentType.replace(/_/g, ' ').replace('and', '+')])
+  if (t.paymentType !== 'not_stated') terms.push(['Payment', { cash: 'Cash', gifting: 'Gifting only', cash_and_gifting: 'Cash + gifting', commission_only: 'Commission only', not_stated: '' }[t.paymentType]])
   if (t.deadline?.date || t.deadline?.text)
     terms.push([
       'Go-live',
@@ -202,6 +205,8 @@ function Panel({ deal, onClose }: { deal: Deal; onClose: () => void }) {
         <s>{h.from}</s> → {h.to}
       </>,
     ])
+  // A scam's "terms" are bait, not terms: show only who sent it.
+  if (scam) terms.length = 0
   terms.push(['From', [deal.contact.name, deal.contact.org, deal.contact.email].filter(Boolean).join(', ')])
 
   return (
@@ -235,9 +240,9 @@ function Panel({ deal, onClose }: { deal: Deal; onClose: () => void }) {
             </div>
           )}
 
-          {terms.length > 1 && (
+          {(terms.length > 1 || scam) && (
             <section>
-              <h3>Terms</h3>
+              <h3>{scam ? 'Sent by' : 'Terms'}</h3>
               <dl className="terms">
                 {terms.map(([k, v]) => (
                   <div key={k}>

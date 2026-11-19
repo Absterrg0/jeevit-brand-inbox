@@ -941,3 +941,72 @@ textarea.draft-body:focus-visible {
   background: none;
   padding: 0;
 }
+
+.d-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.act {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-2);
+  background: transparent;
+  box-shadow: 0 0 0 1px var(--border);
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.act:hover {
+  color: var(--fg);
+  background: color-mix(in srgb, var(--fg) 5%, transparent);
+}
+.act.on {
+  color: #fff;
+  background: var(--reply);
+  box-shadow: none;
+}
+.act.danger {
+  color: var(--scam, #d23c3c);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--scam, #d23c3c) 40%, transparent);
+}
+.row.is-done {
+  opacity: 0.5;
+}
+.row.is-done .row-brand {
+  text-decoration: line-through;
+}
+.chip.t-done {
+  color: var(--fg-3);
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
+}
+.seg {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 9px;
+  box-shadow: 0 0 0 1px var(--border);
+  margin-left: auto;
+  margin-right: 8px;
+}
+.seg button {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--fg-3);
+  background: transparent;
+}
+.seg button.on {
+  color: var(--fg);
+  background: color-mix(in srgb, var(--fg) 8%, transparent);
+}
+@media (max-width: 600px) {
+  .draft-head { flex-wrap: wrap; gap: 8px; }
+  .seg { margin-left: 0; }
+}

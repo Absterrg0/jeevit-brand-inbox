@@ -47,7 +47,58 @@ function useSelection() {
   return [id, select] as const
 }
 
+const DONE_KEY = 'winnow-done'
+function readDone(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(DONE_KEY) ?? '[]'))
+  } catch {
+    return new Set()
+  }
+}
+function useDone() {
+  const [done, setDone] = useState<Set<string>>(readDone)
+  const toggle = useCallback((id: string) => {
+    setDone((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      try {
+        localStorage.setItem(DONE_KEY, JSON.stringify([...next]))
+      } catch {
+        /* private mode: keep it in memory */
+      }
+      return next
+    })
+  }, [])
+  return { done, toggle }
+}
+
+/** A calendar file for a follow-up nudge, so the reminder lives in the creator's own calendar. */
+function reminderHref(deal: Deal, days: number): string {
+  const d = new Date(Date.now() + days * 86_400_000)
+  d.setHours(10, 0, 0, 0)
+  const stamp = (x: Date) => x.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+  const end = new Date(d.getTime() + 15 * 60_000)
+  const esc = (t: string) => t.replace(/[,;\\]/g, (c) => '\\' + c).replace(/\n/g, '\\n')
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Winnow//EN',
+    'BEGIN:VEVENT',
+    `UID:${deal.id}-${d.getTime()}@winnow`,
+    `DTSTAMP:${stamp(new Date())}`,
+    `DTSTART:${stamp(d)}`,
+    `DTEND:${stamp(end)}`,
+    `SUMMARY:${esc(`Follow up with ${deal.brand}`)}`,
+    `DESCRIPTION:${esc(`${deal.why}\nContact: ${deal.contact.email}`)}`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n')
+  return `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`
+}
+
 export function App() {
+  const { done, toggle: toggleDone } = useDone()
   const mobile = useMobile()
   const [picked, select] = useSelection()
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
@@ -152,7 +203,7 @@ export function App() {
               <ul>
                 {g.deals.map((d) => (
                   <li key={d.id}>
-                    <Row deal={d} active={deal?.id === d.id} onPick={() => select(d.id)} />
+                    <Row deal={d} active={deal?.id === d.id} done={done.has(d.id)} onPick={() => select(d.id)} />
                   </li>
                 ))}
               </ul>
@@ -161,7 +212,7 @@ export function App() {
         </nav>
 
         <main className={`detail${deal ? ' open' : ''}`} ref={detailRef} aria-label="Deal">
-          {deal && <Detail key={deal.id} deal={deal} mobile={mobile} onBack={() => select(null)} />}
+          {deal && <Detail key={deal.id} deal={deal} mobile={mobile} done={done.has(deal.id)} onToggleDone={() => toggleDone(deal.id)} onBack={() => select(null)} />}
         </main>
       </div>
     </div>
@@ -180,19 +231,19 @@ function Stat({ label, value, tone, wide }: { label: string; value: string; tone
   )
 }
 
-function Row({ deal, active, onPick }: { deal: Deal; active: boolean; onPick: () => void }) {
+function Row({ deal, active, done, onPick }: { deal: Deal; active: boolean; done: boolean; onPick: () => void }) {
   const offer = deal.action === 'report' ? null : offerText(deal.terms)
   const latest = emailsById.get(deal.latestEmailId)
   const high = deal.flags.filter((f) => f.severity === 'high').length
   return (
-    <button className={`row${active ? ' active' : ''}`} data-deal={deal.id} onClick={onPick} aria-current={active ? 'true' : undefined}>
+    <button className={`row${active ? ' active' : ''}${done ? ' is-done' : ''}`} data-deal={deal.id} onClick={onPick} aria-current={active ? 'true' : undefined}>
       <span className="row-top">
         <span className="row-brand">{deal.brand}</span>
         <span className="row-offer num">{offer ?? '—'}</span>
       </span>
       <span className="row-sub">{latest?.subject ?? deal.why}</span>
       <span className="row-meta">
-        <span className={`chip t-${tone(deal)}`}>{ACTION_WORD[deal.action]}</span>
+        {done ? <span className="chip t-done">Done</span> : <span className={`chip t-${tone(deal)}`}>{ACTION_WORD[deal.action]}</span>}
         {high > 0 && deal.action !== 'report' && (
           <span className="row-flag">
             {high} {high === 1 ? 'risk' : 'risks'}
@@ -205,7 +256,7 @@ function Row({ deal, active, onPick }: { deal: Deal; active: boolean; onPick: ()
   )
 }
 
-function Detail({ deal, mobile, onBack }: { deal: Deal; mobile: boolean; onBack: () => void }) {
+function Detail({ deal, mobile, done, onToggleDone, onBack }: { deal: Deal; mobile: boolean; done: boolean; onToggleDone: () => void; onBack: () => void }) {
   const t = deal.terms
   const when = due(today, deal)
   const scope = scopeText(t)
@@ -249,6 +300,21 @@ function Detail({ deal, mobile, onBack }: { deal: Deal; mobile: boolean; onBack:
             <span>{deal.contact.email}</span>
           </p>
           <p className={`d-why t-${tone(deal)}`}>{deal.why}</p>
+          <div className="d-actions">
+            <button type="button" className={`act${done ? ' on' : ''}`} onClick={onToggleDone} aria-pressed={done}>
+              {done ? '✓ Done · undo' : 'Mark as done'}
+            </button>
+            {!scam && deal.action !== 'ignore' && (
+              <a className="act" href={reminderHref(deal, 3)} download={`follow-up-${deal.id}.ics`} title="Adds a reminder to your calendar in 3 days">
+                Remind me in 3 days
+              </a>
+            )}
+            {scam && (
+              <a className="act danger" href="https://cybercrime.gov.in/" target="_blank" rel="noreferrer">
+                Report at cybercrime.gov.in ↗
+              </a>
+            )}
+          </div>
         </header>
 
         {scam && (
@@ -327,7 +393,7 @@ function Detail({ deal, mobile, onBack }: { deal: Deal; mobile: boolean; onBack:
 
         {!scam && (
           <section className="block">
-            {deal.draft ? <Draft draft={deal.draft} to={deal.contact.email} /> : <p className="none-note">No reply needed.</p>}
+            {deal.draft ? <Draft draft={deal.draft} to={deal.contact.email} accept={deal.action === 'negotiate' ? acceptBody(deal) : null} /> : <p className="none-note">No reply needed.</p>}
           </section>
         )}
 
@@ -377,7 +443,15 @@ function FlagItem({ flag }: { flag: Flag }) {
   )
 }
 
-function Draft({ draft, to }: { draft: NonNullable<Deal['draft']>; to: string }) {
+function acceptBody(deal: Deal): string | null {
+  const offer = offerText(deal.terms)
+  const scope = scopeText(deal.terms)
+  if (!offer || !scope || !deal.terms.fee) return null
+  const name = deal.contact.name?.split(' ')[0]
+  return `Hi${name ? ` ${name}` : ''},\n\nThanks for the details. I'm happy to go ahead at ${offer} for ${scope}. Please share the contract and payment terms, and I'll confirm the dates.\n\nBest,\nRiya`
+}
+
+function Draft({ draft, to, accept }: { draft: NonNullable<Deal['draft']>; to: string; accept: string | null }) {
   const [body, setBody] = useState(draft.body)
   useEffect(() => setBody(draft.body), [draft.body])
   const edited = body !== draft.body
@@ -395,6 +469,16 @@ function Draft({ draft, to }: { draft: NonNullable<Deal['draft']>; to: string })
     <div className="draft">
       <div className="draft-head">
         <h3 className="label">Draft reply</h3>
+        {accept && (
+          <div className="seg" role="group" aria-label="Reply with">
+            <button type="button" className={body !== accept ? 'on' : ''} onClick={() => setBody(draft.body)}>
+              Counter
+            </button>
+            <button type="button" className={body === accept ? 'on' : ''} onClick={() => setBody(accept)}>
+              Accept their offer
+            </button>
+          </div>
+        )}
         <div className="draft-actions">
         <button className={`copy ghost${state === 'copied' ? ' done' : ''}`} onClick={copy}>
           {state === 'copied' ? (

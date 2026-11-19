@@ -196,7 +196,7 @@ Completion tokens include the model's (low-effort) reasoning, which is why they 
 1. **Thread-aware extraction.** Pass the deal's merged terms into the extraction call so a follow-up like "add a second reel" can be resolved. Today each email is read alone.
 2. **Measure variance and compare models** (a second Groq model, Gemini) on the same two label sets, and check whether the three-call design is still worth it with a model this size or collapses back to one.
 3. **Feedback as eval data.** Let the creator correct a category or action in the UI and append it to the label set.
-4. **Real mail.** Gmail read-only via OAuth, proper thread headers, attachments (E-15's brief is a PDF nobody read).
+4. **Gmail connection.** Read the real inbox via Gmail OAuth (read-only scope first), group threads by `Message-ID`/`In-Reply-To` instead of brand name, read attachments (E-15's brief is a PDF nobody read), and save replies as Gmail drafts instead of using a `mailto:` link. The creator still presses send.
 5. **Structured profile.** Replace the regex over free-text profile fields with fields the creator confirms once.
 6. **Negotiation memory.** What was countered, what came back, and reminders when a brand goes quiet.
 7. **Better Hindi and Hinglish drafts**, with a native speaker reviewing them.
@@ -235,7 +235,7 @@ recordings/             recorded model responses
 tests/                  56 tests
 ```
 
-The UI is a bonus: one page that renders `out/analysis.json` and nothing else, so it cannot disagree with the CLI. It opens on today's brief, lists the deals grouped by what to do, and shows each deal's terms, every reason with the quoted evidence, and a draft to copy (scams get a warning instead of a draft). Light and dark, desktop and phone. Drafts are editable, and **Reply in mail** opens the creator's mail app with the reply pre-filled (a `mailto:` link), so the human still presses send. It is a static build, deployed at the link above.
+The UI is a bonus: one page that renders `out/analysis.json` and nothing else, so it cannot disagree with the CLI. It opens on today's brief, lists the deals grouped by what to do, and shows each deal's terms, every reason with the quoted evidence, and a draft to copy (scams get a warning instead of a draft). Light and dark, desktop and phone. It is meant to be acted on, not just read: drafts are editable, negotiate deals switch between the counter-offer and an accept reply in one click, **Reply in mail** opens the creator's mail app with the reply pre-filled (a `mailto:` link, so the human still presses send), **Remind me in 3 days** downloads a calendar reminder to follow up, **Mark as done** clears handled deals (kept in the browser), and scams link to India's cybercrime reporting portal. It is a static build, deployed at the link above.
 
 | | |
 | --- | --- |

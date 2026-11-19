@@ -626,6 +626,18 @@ kbd {
   justify-content: space-between;
   margin-bottom: 10px;
 }
+.draft-actions {
+  display: flex;
+  gap: 8px;
+}
+.copy.ghost:not(.done) {
+  color: var(--fg, inherit);
+  background: transparent;
+  box-shadow: 0 0 0 1px var(--border);
+}
+a.copy {
+  text-decoration: none;
+}
 .draft-head .label {
   margin: 0;
 }

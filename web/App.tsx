@@ -327,7 +327,7 @@ function Detail({ deal, mobile, onBack }: { deal: Deal; mobile: boolean; onBack:
 
         {!scam && (
           <section className="block">
-            {deal.draft ? <Draft draft={deal.draft} /> : <p className="none-note">No reply needed.</p>}
+            {deal.draft ? <Draft draft={deal.draft} to={deal.contact.email} /> : <p className="none-note">No reply needed.</p>}
           </section>
         )}
 
@@ -377,7 +377,8 @@ function FlagItem({ flag }: { flag: Flag }) {
   )
 }
 
-function Draft({ draft }: { draft: NonNullable<Deal['draft']> }) {
+function Draft({ draft, to }: { draft: NonNullable<Deal['draft']>; to: string }) {
+  const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`
   const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle')
   const timer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(timer.current), [])
@@ -391,7 +392,8 @@ function Draft({ draft }: { draft: NonNullable<Deal['draft']> }) {
     <div className="draft">
       <div className="draft-head">
         <h3 className="label">Draft reply</h3>
-        <button className={`copy${state === 'copied' ? ' done' : ''}`} onClick={copy}>
+        <div className="draft-actions">
+        <button className={`copy ghost${state === 'copied' ? ' done' : ''}`} onClick={copy}>
           {state === 'copied' ? (
             <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden>
               <path d="m3 8.5 3 3 7-7" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
@@ -402,8 +404,15 @@ function Draft({ draft }: { draft: NonNullable<Deal['draft']> }) {
               <path d="M3 10.5V4a1.5 1.5 0 0 1 1.5-1.5H10" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" />
             </svg>
           )}
-          <span aria-live="polite">{state === 'copied' ? 'Copied' : state === 'failed' ? 'Copy failed' : 'Copy reply'}</span>
+          <span aria-live="polite">{state === 'copied' ? 'Copied' : state === 'failed' ? 'Copy failed' : 'Copy'}</span>
         </button>
+        <a className="copy" href={mailto} title={`Opens your mail app with this reply to ${to}. Nothing is sent until you press send there.`}>
+          <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden>
+            <path d="M2.5 4.5h11v7a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-7Z M2.5 4.5 8 9l5.5-4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
+          </svg>
+          <span>Reply in mail</span>
+        </a>
+        </div>
       </div>
       <div className="draft-card">
         <p className="draft-subject">

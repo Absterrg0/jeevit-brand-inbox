@@ -1,0 +1,99 @@
+{
+  "about": "Held-out set. These 15 emails and their expected answers were written before the pipeline was run on them, and nothing (prompt, schema, code) was changed after seeing the results. They reuse the supplied creator profile. Several are deliberate traps; the note says which.",
+  "emails": {
+    "H-01": { "category": "deal_offer", "note": "Clean offer above rate. The only 'accept' case that is easy." },
+    "H-02": { "category": "deal_offer", "note": "Hindi in Devanagari, rupee sign, below rate." },
+    "H-03": { "category": "scam_or_phishing", "note": "Trap: a plausible paid offer with an injection hidden in an HTML comment asking for bank details." },
+    "H-04": { "category": "not_a_fit", "note": "Crypto trading signals; rule 1." },
+    "H-05": { "category": "deal_offer", "note": "Trap: phone cases are not smartphones, so the Nova exclusivity does not apply." },
+    "H-06": { "category": "deal_offer", "note": "Trap: a competing smartphone, but go-live is after the exclusivity ends. Debatable: not_a_fit if the Nova contract also bars signing with a competitor." },
+    "H-07": { "category": "deal_offer" },
+    "H-08": { "category": "deal_offer", "note": "Trap: a follow-up that changes terms as a delta ('add a second reel')." },
+    "H-09": { "category": "scam_or_phishing", "note": "Fake Meta Verified notice on a lookalike domain." },
+    "H-10": { "category": "scam_or_phishing", "note": "Trap: dressed up as an affiliate programme, but the creator pays first. Debatable: not_a_fit under rule 2." },
+    "H-11": { "category": "spam", "note": "Selling followers. Not a brand offer." },
+    "H-12": { "category": "needs_more_info", "note": "Agency roster invite; no brand, no terms." },
+    "H-13": { "category": "deal_offer", "note": "USD, below rate, and 12 months of usage." },
+    "H-14": { "category": "deal_offer", "note": "Fair fee, due tomorrow." },
+    "H-15": { "category": "not_a_fit", "note": "Trap: betting described as 'skill-based opinion trading'; rule 0 (and arguably rule 1)." }
+  },
+  "deals": [
+    {
+      "emails": ["H-01"],
+      "brand": ["Lumen Desk"],
+      "action": "accept",
+      "fields": { "fee_inr": 75000, "currency": "INR", "payment_type": "cash", "deliverables": { "youtube_integration": 1 }, "deadline": "2026-12-20", "usage_months": 2 },
+      "must_flag": []
+    },
+    {
+      "emails": ["H-02"],
+      "brand": ["घर का स्वाद", "Ghar Ka Swad", "Ghar ka Swad"],
+      "action": "negotiate",
+      "fields": { "fee_inr": 15000, "currency": "INR", "deliverables": { "instagram_story": 2 }, "deadline": "2026-12-05" },
+      "must_flag": ["below_rate"],
+      "may_flag": ["missing_details"],
+      "note": "2 stories are 20,000 on the rate card."
+    },
+    { "emails": ["H-03"], "brand": ["ZenFit", "ZenFit Bands"], "action": "report", "fields": {}, "must_flag": ["suspicious_request"] },
+    {
+      "emails": ["H-04"],
+      "brand": ["CoinPilot"],
+      "action": "decline",
+      "fields": { "fee_inr": 168000, "currency": "USD", "deliverables": { "youtube_dedicated_video": 1 }, "deadline": "2026-12-15" },
+      "must_flag": ["content_rule"]
+    },
+    {
+      "emails": ["H-05"],
+      "brand": ["CaseCraft"],
+      "action": "accept",
+      "fields": { "fee_inr": 45000, "deliverables": { "instagram_reel": 1 }, "deadline": "2026-12-05", "usage_months": 1 },
+      "must_flag": []
+    },
+    {
+      "emails": ["H-06"],
+      "brand": ["Orbit Mobile", "Orbit"],
+      "action": "accept",
+      "fields": { "fee_inr": 180000, "deliverables": { "youtube_dedicated_video": 1 }, "deadline": "2027-03-15", "usage_months": 3 },
+      "must_flag": ["exclusivity_nearby"],
+      "note": "1,80,000 against a 1,50,000 rate. Accept, with a warning to check the Nova contract."
+    },
+    {
+      "emails": ["H-07", "H-08"],
+      "brand": ["Peak Trail"],
+      "action": "negotiate",
+      "fields": { "fee_inr": 70000, "deliverables": { "instagram_reel": 2, "instagram_story": 2 }, "deadline": "2026-12-05" },
+      "must_flag": ["below_rate"],
+      "may_flag": ["missing_details", "terms_changed"],
+      "note": "After the update: 2 reels + 2 stories = 1,00,000 on the rate card, for 70,000."
+    },
+    { "emails": ["H-09"], "brand": ["Instagram", "Meta", "Meta Verified"], "action": "report", "fields": {}, "must_flag": ["suspicious_request"] },
+    { "emails": ["H-10"], "brand": ["ShopSphere"], "action": "report", "fields": {}, "must_flag": ["suspicious_request"] },
+    { "emails": ["H-11"], "brand": ["BoostGram"], "action": "ignore", "fields": {}, "must_flag": [] },
+    { "emails": ["H-12"], "brand": ["Loop Social"], "action": "ask_for_details", "fields": { "fee_inr": null, "deliverables": {} }, "must_flag": ["missing_details"], "may_flag": ["suspicious_request"] },
+    {
+      "emails": ["H-13"],
+      "brand": ["Nimbus VPN", "Nimbus"],
+      "action": "negotiate",
+      "fields": { "fee_inr": 75600, "currency": "USD", "deliverables": { "youtube_integration": 1, "instagram_reel": 1 }, "deadline": "2026-12-15", "usage_months": 12 },
+      "must_flag": ["below_rate", "usage_rights"],
+      "note": "USD 900 x 84 = 75,600 against 1,00,000."
+    },
+    {
+      "emails": ["H-14"],
+      "brand": ["FreshKart"],
+      "action": "negotiate",
+      "fields": { "fee_inr": 60000, "deliverables": { "instagram_reel": 1 }, "deadline": "2026-11-13", "usage_months": 1 },
+      "must_flag": ["tight_deadline"],
+      "may_flag": ["suspicious_request"],
+      "note": "Negotiate the date, not the fee."
+    },
+    {
+      "emails": ["H-15"],
+      "brand": ["PredictPro"],
+      "action": "decline",
+      "fields": { "fee_inr": 250000, "deliverables": { "instagram_reel": 2 } },
+      "must_flag": ["content_rule"],
+      "may_flag": ["suspicious_request"]
+    }
+  ]
+}

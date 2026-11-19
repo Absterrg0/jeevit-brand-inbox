@@ -1,0 +1,87 @@
+{
+  "about": "Expected answers for data/inbox.json, written by reading the 15 emails against the creator profile, before the pipeline was run. `fields` lists only the fields that matter for that deal. `must_flag` are the risks a careful reader would insist on; `may_flag` are reasonable extras that are not counted as false alarms.",
+  "emails": {
+    "E-01": { "category": "deal_offer" },
+    "E-02": { "category": "deal_offer", "note": "Only restates the fee. It is an offer because the thread already has deliverables." },
+    "E-03": { "category": "scam_or_phishing", "note": "Pay Rs 2,999 to 'unlock' an ambassador programme." },
+    "E-04": { "category": "not_a_fit", "note": "A real, well-paid offer for a smartphone while the Nova Phones exclusivity runs to 31 Jan 2027." },
+    "E-05": { "category": "not_a_fit", "note": "Fantasy cricket app; rule 0." },
+    "E-06": { "category": "deal_offer", "note": "Deliverable and budget are both stated. Debatable: needs_more_info, since there is no timeline or usage." },
+    "E-07": { "category": "scam_or_phishing", "note": "Prompt injection asking for a phone number and home address. There is no offer in it." },
+    "E-08": { "category": "needs_more_info" },
+    "E-09": { "category": "deal_offer", "note": "Barter counts as an offer in the brief. The problem with it is a risk flag, not a category." },
+    "E-10": { "category": "deal_offer", "note": "The usage terms are a risk, not a category." },
+    "E-11": { "category": "deal_offer", "note": "Agency writing for Dew Lab; same deal." },
+    "E-12": { "category": "deal_offer", "note": "Everything is stated, but the go-live date (1 Nov) is before the email was sent (10 Nov). Debatable: needs_more_info." },
+    "E-13": { "category": "spam" },
+    "E-14": { "category": "scam_or_phishing", "note": "Fake YouTube copyright notice on a lookalike domain." },
+    "E-15": { "category": "needs_more_info", "note": "Refers to an attachment; no terms in the body." }
+  },
+  "deals": [
+    {
+      "emails": ["E-01", "E-02", "E-11"],
+      "brand": ["Dew Lab"],
+      "action": "negotiate",
+      "fields": { "fee_inr": 100000, "currency": "INR", "payment_type": "cash", "deliverables": { "instagram_reel": 2, "instagram_story": 3 }, "deadline": "2026-11-25", "usage_months": 3 },
+      "must_flag": ["below_rate", "unverified_third_party"],
+      "may_flag": ["terms_changed", "suspicious_request"],
+      "note": "Latest fee is 1,00,000. Rate card: 2 x 40,000 + 3 x 10,000 = 1,10,000. They opened at 1,20,000."
+    },
+    { "emails": ["E-03"], "brand": ["Glowstar", "GlowStar Official"], "action": "report", "fields": {}, "must_flag": ["suspicious_request"] },
+    {
+      "emails": ["E-04"],
+      "brand": ["Pixelon"],
+      "action": "decline",
+      "fields": { "fee_inr": 100800, "currency": "USD", "deliverables": { "youtube_integration": 1 }, "deadline": "2026-12-10" },
+      "must_flag": ["exclusivity_conflict"]
+    },
+    {
+      "emails": ["E-05"],
+      "brand": ["LuckyPlay11"],
+      "action": "decline",
+      "fields": { "fee_inr": 300000, "currency": "INR", "deliverables": { "instagram_reel": 2, "youtube_integration": 1 } },
+      "must_flag": ["content_rule"],
+      "may_flag": ["suspicious_request"],
+      "note": "A 'YouTube shoutout' is labelled as an integration, the closest rate-card item."
+    },
+    {
+      "emails": ["E-06"],
+      "brand": ["Chai & Co"],
+      "action": "negotiate",
+      "fields": { "fee_inr": 25000, "payment_type": "cash", "deliverables": { "instagram_reel": 1 }, "deadline": null },
+      "must_flag": ["below_rate"],
+      "may_flag": ["missing_details", "unparsed_fee"],
+      "note": "25k against a 40,000 reel rate. Reply should be in Hinglish."
+    },
+    { "emails": ["E-07"], "brand": ["Quickcash Media", "QuickCash Media"], "action": "report", "fields": {}, "must_flag": ["suspicious_request"] },
+    { "emails": ["E-08"], "brand": ["Urban Thread"], "action": "ask_for_details", "fields": { "fee_inr": null, "deliverables": {} }, "must_flag": ["missing_details"] },
+    {
+      "emails": ["E-09"],
+      "brand": ["BrewBox"],
+      "action": "negotiate",
+      "fields": { "fee_inr": null, "payment_type": "gifting", "gift_value_inr": 3500, "deliverables": { "instagram_reel": 1, "instagram_story": 2 }, "deadline": null },
+      "must_flag": ["gifting_only"],
+      "may_flag": ["missing_details"],
+      "note": "Rs 3,500 of product for work priced at 60,000. The deadline is relative (2 weeks after delivery), so there is no calendar date."
+    },
+    {
+      "emails": ["E-10"],
+      "brand": ["AuralBuds"],
+      "action": "negotiate",
+      "fields": { "fee_inr": 67200, "currency": "USD", "deliverables": { "instagram_reel": 1 }, "deadline": "2026-11-30", "usage_perpetual": true },
+      "must_flag": ["usage_rights"],
+      "note": "USD 800 x 84 = 67,200, above the 40,000 reel rate. Earbuds are not smartphones, so no exclusivity conflict."
+    },
+    {
+      "emails": ["E-12"],
+      "brand": ["SnapMeal"],
+      "action": "ask_for_details",
+      "fields": { "fee_inr": 45000, "deliverables": { "instagram_reel": 1 }, "deadline": "2026-11-01" },
+      "must_flag": ["deadline_passed"],
+      "may_flag": ["missing_details", "suspicious_request"]
+    },
+    { "emails": ["E-13"], "brand": ["Creator Weekly", "CreatorWeekly"], "action": "ignore", "fields": {}, "must_flag": [] },
+    { "emails": ["E-14"], "brand": ["YouTube", "YouTube Copyright Centre"], "action": "report", "fields": {}, "must_flag": ["suspicious_request"] },
+    { "emails": ["E-15"], "brand": ["FitNest"], "action": "ask_for_details", "fields": { "fee_inr": null, "deliverables": {} }, "must_flag": ["missing_details"] }
+  ]
+}

@@ -1060,3 +1060,90 @@ textarea.draft-body {
   margin: 0;
   padding: 0 16px 12px;
 }
+
+/* Terms as a plain key/value sheet, risks as a quiet list. */
+.terms {
+  grid-template-columns: 1fr;
+  box-shadow: none;
+  border-radius: 0;
+  border-top: 1px solid var(--border-muted);
+}
+.term {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  align-items: baseline;
+  padding: 11px 0;
+  margin: 0;
+  border-right: 0;
+  border-bottom: 1px solid var(--border-muted);
+}
+.term dt {
+  margin: 0;
+  font-size: 13px;
+}
+.term dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+.term .strong {
+  font-size: 15px;
+}
+.product {
+  margin-top: 8px;
+}
+.flag {
+  grid-template-columns: 14px 1fr;
+  gap: 10px;
+  padding: 10px 0;
+}
+.flag + .flag {
+  border-top: 0;
+}
+.flag .sev {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  margin-top: 7px;
+  border-radius: 50%;
+  font-size: 0;
+  line-height: 0;
+  background: var(--fg-4);
+}
+.sev-high .sev {
+  background: var(--scam);
+}
+.sev-medium .sev {
+  background: var(--decline);
+}
+.flag-title {
+  display: inline;
+}
+.flag-reason {
+  display: inline;
+  margin: 0;
+  color: var(--fg-3);
+}
+.flag-title::after {
+  content: ' — ';
+  color: var(--fg-4);
+  font-weight: 400;
+}
+.flag blockquote {
+  margin-top: 4px;
+  border-left: 0;
+  padding: 0;
+  font-size: 12.5px;
+  color: var(--fg-4);
+}
+.d-actions {
+  margin-top: 12px;
+}
+.act {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12.5px;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--fg) 5%, transparent);
+}

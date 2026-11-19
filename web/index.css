@@ -744,8 +744,9 @@ kbd {
   }
   .panel {
     position: sticky;
-    top: 0;
     inset: auto;
+    top: 0;
+    align-self: start;
     height: 100vh;
     border-left: 1px solid var(--rule-strong);
     animation-name: slide;

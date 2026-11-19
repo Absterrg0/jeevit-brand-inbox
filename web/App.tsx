@@ -140,7 +140,8 @@ export function App() {
 }
 
 function Row({ deal, active, onOpen }: { deal: Deal; active: boolean; onOpen: () => void }) {
-  const offer = offerText(deal.terms)
+  // A scam's promised money is bait, so it is never shown as an offer.
+  const offer = deal.action === 'report' ? null : offerText(deal.terms)
   const d = due(today, deal)
   const scope = scopeText(deal.terms)
   return (

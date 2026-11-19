@@ -20,7 +20,7 @@ So the model reads (what kind of email, which brand, what is asked, copy the fee
 Consequences worth defending:
 
 - **The model does not pick the category.** It reports facts; `categorise()` in `src/core/deals.ts` derives the category from them in a fixed order. The model's own guess is recorded (`modelCategory`) and scored separately so the value of the code layer is measurable, but it is never an input.
-- **The model copies money as text** (`"Rs 3 lakh"`), and code parses it. Asking a 7B model for `300000` invites a wrong number of zeros that nobody would notice.
+- **The model copies money as text** (`"Rs 3 lakh"`), and code parses it. Asking a model for `300000` invites a wrong number of zeros that nobody would notice.
 - **The model returns day and month; code picks the year.** "Go live by 1 November" in an email sent on 10 November must stay in the past so it can be flagged. A model asked for an ISO date tends to helpfully roll it to next year.
 - **Every claim that can change the outcome needs a quote**, and code checks the quote is in the email. Unsupported claims are dropped and listed in `droppedClaims`.
 
@@ -28,7 +28,7 @@ Consequences worth defending:
 
 Planned: one extraction call that also listed rule and exclusivity conflicts.
 
-What happened on the first real run with `qwen2.5:7b`: it extracted `product: "Pixelon 9 smartphone (smartphones)"` and, in the same JSON, reported no conflict with the smartphone exclusivity. The pipeline recommended accepting a deal that breaches a contract. It also labelled "Fast payment, no long contracts" as a request for upfront payment, which turned a legitimate (if unwanted) offer into a scam.
+What happened on the first real run, with a small model: it extracted `product: "Pixelon 9 smartphone (smartphones)"` and, in the same JSON, reported no conflict with the smartphone exclusivity. The pipeline recommended accepting a deal that breaches a contract. It also labelled "Fast payment, no long contracts" as a request for upfront payment, which turned a legitimate (if unwanted) offer into a scam.
 
 Two prompt rewrites of the single call did not fix it. Splitting did: a second, narrow call (`src/llm/check.ts`) asks one explicit yes/no question per rule, per exclusivity, and "does this ask the creator to pay?", each needing evidence. Small models are much better at five short questions than at filling twenty keys at once.
 
@@ -53,12 +53,14 @@ Known gap: the backstop is English-only and easy to phrase around. Then safety r
 
 ## 5. Recorded responses instead of a live key
 
-No hosted API key was available while building this, and reviewers should not need one. Model responses are recorded in `recordings/` keyed by a hash of the prompt version plus the exact messages. The default run replays them; the deterministic code still runs for real on every replay.
+Reviewers should not need an API key. Model responses are recorded in `recordings/` keyed by a hash of the prompt version plus the exact messages. The default run replays them; the deterministic code still runs for real on every replay.
 
 - Change an email or a prompt and the key changes, so stale output is never replayed. The email is reported as "not analysed" rather than guessed.
 - `--live` is cache-first, which is also the production behaviour: re-running an inbox only pays for new emails.
 
-Trade-off: the recorded run is from a local 7B model, which is weaker than the free hosted models (Groq, Gemini). The numbers in the README are therefore a floor for this design, and the hosted path, though it is the same code with a different base URL, **was not exercised**.
+The recorded run is `openai/gpt-oss-120b` on Groq's free tier at temperature 0. The pipeline was designed and debugged against a much smaller model first, which is why it leans so hard on narrow questions, quotes and code checks; with the larger model those checks fire less often but cost almost nothing to keep. Trade-off: one recorded run per set, so run-to-run variance is not known.
+
+There is no local or offline model path. With no key configured, `--live` stops with an error rather than falling back to anything.
 
 ## 6. Failing closed
 
@@ -72,7 +74,7 @@ If the model's output fails validation twice, or the rule check fails, the email
 - **The rate card has four items.** Anything else ("YouTube shoutout") is either mapped to the nearest item by the model or left unpriced and mentioned.
 - **Quote checking is word overlap**, not exact substring, because small models trim quotes. It can be fooled by a quote assembled from words scattered across the email.
 - **A false scam signal costs a real deal.** The quote check does not verify that the label fits the quote. Scams are shown under "Leave alone" with the quoted reason rather than hidden, so a wrong one is recoverable.
-- **Draft quality depends on the model.** The guard stops invented facts, not clumsy phrasing, and the Hinglish from a 7B model is rough. Rejected drafts fall back to an English template.
+- **Draft quality depends on the model.** The guard stops invented facts, not clumsy phrasing, and Hindi or Hinglish drafts have not been reviewed by a native speaker. Rejected drafts fall back to an English template.
 - **Labels are one person's judgement.** Debatable ones are marked in the label files (E-06, E-12, H-06, H-10).
 - **30 emails is a small sample.** One email is 6.7 points of accuracy.
 

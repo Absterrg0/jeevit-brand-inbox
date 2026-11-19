@@ -36,7 +36,7 @@ export async function analyseInbox(emails: Email[], profile: Profile, llm: Recor
   const policy = derivePolicy(profile)
   const say = options.onProgress ?? (() => {})
 
-  // 1 + 2. One email at a time: free tiers and local models are both rate-limited.
+  // 1 + 2. One email at a time: free tiers are rate-limited per minute.
   const facts: EmailFacts[] = []
   const errors = new Map<string, string>()
   for (const email of emails) {

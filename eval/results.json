@@ -2,22 +2,22 @@
   "main": {
     "stats": {
       "mode": "replay",
-      "provider": "ollama",
-      "model": "qwen2.5:7b",
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
       "promptVersion": "extract-v4, check-v2, draft-v2",
       "calls": 39,
       "failures": 0,
       "retries": 2,
-      "promptTokens": 33615,
-      "completionTokens": 4862,
-      "recordedLatencyMs": 2867560
+      "promptTokens": 37998,
+      "completionTokens": 9688,
+      "recordedLatencyMs": 33101
     },
     "score": {
       "emails": 15,
       "category": {
         "correct": 15,
         "total": 15,
-        "modelAloneCorrect": 10
+        "modelAloneCorrect": 12
       },
       "perCategory": {
         "deal_offer": {
@@ -145,28 +145,28 @@
   "heldout": {
     "stats": {
       "mode": "replay",
-      "provider": "ollama",
-      "model": "qwen2.5:7b",
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
       "promptVersion": "extract-v4, check-v2, draft-v2",
-      "calls": 40,
+      "calls": 39,
       "failures": 0,
-      "retries": 2,
-      "promptTokens": 34012,
-      "completionTokens": 5233,
-      "recordedLatencyMs": 1593830
+      "retries": 1,
+      "promptTokens": 36752,
+      "completionTokens": 9782,
+      "recordedLatencyMs": 32054
     },
     "score": {
       "emails": 15,
       "category": {
-        "correct": 13,
+        "correct": 15,
         "total": 15,
-        "modelAloneCorrect": 8
+        "modelAloneCorrect": 10
       },
       "perCategory": {
         "deal_offer": {
           "expected": 8,
           "predicted": 8,
-          "correct": 7
+          "correct": 8
         },
         "needs_more_info": {
           "expected": 1,
@@ -175,13 +175,13 @@
         },
         "not_a_fit": {
           "expected": 2,
-          "predicted": 3,
+          "predicted": 2,
           "correct": 2
         },
         "scam_or_phishing": {
           "expected": 3,
-          "predicted": 2,
-          "correct": 2
+          "predicted": 3,
+          "correct": 3
         },
         "spam": {
           "expected": 1,
@@ -191,9 +191,9 @@
       },
       "confusion": {
         "deal_offer": {
-          "deal_offer": 7,
+          "deal_offer": 8,
           "needs_more_info": 0,
-          "not_a_fit": 1,
+          "not_a_fit": 0,
           "scam_or_phishing": 0,
           "spam": 0
         },
@@ -212,10 +212,10 @@
           "spam": 0
         },
         "scam_or_phishing": {
-          "deal_offer": 1,
+          "deal_offer": 0,
           "needs_more_info": 0,
           "not_a_fit": 0,
-          "scam_or_phishing": 2,
+          "scam_or_phishing": 3,
           "spam": 0
         },
         "spam": {
@@ -231,12 +231,12 @@
         "total": 14
       },
       "action": {
-        "correct": 11,
+        "correct": 14,
         "total": 14
       },
       "fields": {
         "brand": {
-          "correct": 12,
+          "correct": 13,
           "total": 14
         },
         "fee_inr": {
@@ -265,53 +265,15 @@
         }
       },
       "fieldsTotal": {
-        "correct": 49,
+        "correct": 50,
         "total": 52
       },
       "mustFlags": {
-        "found": 10,
+        "found": 12,
         "total": 12
       },
-      "falseAlarms": [
-        "CaseCraft (H-05): exclusivity_conflict (\"Conflicts with your Nova Phones exclusivity\")",
-        "Orbit Mobile (H-06): unverified_conflict (\"Possible conflict, not confirmed\")",
-        "ShopSphere (H-10): gifting_only (\"No fee offered\")"
-      ],
+      "falseAlarms": [],
       "misses": [
-        {
-          "where": "H-05",
-          "what": "category",
-          "expected": "deal_offer",
-          "got": "not_a_fit",
-          "detail": "Conflicts with a current exclusivity."
-        },
-        {
-          "where": "H-10",
-          "what": "category",
-          "expected": "scam_or_phishing",
-          "got": "deal_offer",
-          "detail": "States deliverables and compensation."
-        },
-        {
-          "where": "CaseCraft (H-05)",
-          "what": "action",
-          "expected": "accept",
-          "got": "decline",
-          "detail": "Conflicts with your Nova Phones exclusivity. Decline politely."
-        },
-        {
-          "where": "Orbit Mobile (H-06)",
-          "what": "action",
-          "expected": "accept",
-          "got": "review_manually",
-          "detail": "The model raised a possible conflict it could not back up with words from the email. Read it yourself before replying."
-        },
-        {
-          "where": "Orbit Mobile (H-06)",
-          "what": "risk flag",
-          "expected": "exclusivity_nearby",
-          "got": "unverified_conflict"
-        },
         {
           "where": "Peak Trail (H-07, H-08)",
           "what": "deliverables",
@@ -322,26 +284,7 @@
           "where": "Instagram (H-09)",
           "what": "brand",
           "expected": "Instagram",
-          "got": "Instagram Verify Team"
-        },
-        {
-          "where": "ShopSphere (H-10)",
-          "what": "action",
-          "expected": "report",
-          "got": "negotiate",
-          "detail": "No fee offered. Counter before agreeing."
-        },
-        {
-          "where": "ShopSphere (H-10)",
-          "what": "brand",
-          "expected": "ShopSphere",
-          "got": "shopsphere-partners"
-        },
-        {
-          "where": "ShopSphere (H-10)",
-          "what": "risk flag",
-          "expected": "suspicious_request",
-          "got": "gifting_only, missing_details"
+          "got": "Instagramverifyteam"
         }
       ],
       "unanalysed": []

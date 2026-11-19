@@ -19,13 +19,13 @@
 
 ## Do not reply, click or pay
 
-- **Quickcash Media** _(E-07)_: Tries to instruct an AI assistant. Do not reply, pay or click; report it as phishing.
 - **Glowstar** _(E-03)_: Asks you to pay. Do not reply, pay or click; report it as phishing.
-- **YouTube Copyright Centre** _(E-14)_: Asks you to log in or verify through a link. Do not reply, pay or click; report it as phishing.
+- **Quickcashmedia** _(E-07)_: Tries to instruct an AI assistant. Do not reply, pay or click; report it as phishing.
+- **Youtubecopyrightcentre** _(E-14)_: Asks you to log in or verify through a link. Do not reply, pay or click; report it as phishing.
 
 ## Nothing to do
 
-- **CreatorWeekly** _(E-13)_: Not a brand offer. Nothing to do.
+- **Creatorweekly** _(E-13)_: Not a brand offer. Nothing to do.
 
 ## Money
 

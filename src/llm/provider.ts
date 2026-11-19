@@ -1,7 +1,7 @@
 /**
  * One small interface over any OpenAI-compatible chat endpoint. Groq,
- * OpenRouter, Gemini's compatibility endpoint and a local Ollama all speak it,
- * so switching provider is configuration, not code.
+ * OpenRouter and Gemini's compatibility endpoint all speak it, so switching
+ * provider is configuration, not code.
  *
  * The model is called with JSON mode and nothing else: no tools, no function
  * calling, no browsing. The only thing it can do is return text.
@@ -30,25 +30,25 @@ export interface LlmProvider {
 
 interface Preset {
   baseUrl: string
-  keyEnv: string | null
+  keyEnv: string
   defaultModel: string
 }
 
 /** Default models are free-tier ones at the time of writing; override with LLM_MODEL. */
 export const PRESETS: Record<string, Preset> = {
-  groq: { baseUrl: 'https://api.groq.com/openai/v1', keyEnv: 'GROQ_API_KEY', defaultModel: 'llama-3.3-70b-versatile' },
+  groq: { baseUrl: 'https://api.groq.com/openai/v1', keyEnv: 'GROQ_API_KEY', defaultModel: 'openai/gpt-oss-120b' },
   gemini: { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', keyEnv: 'GEMINI_API_KEY', defaultModel: 'gemini-2.5-flash' },
   openrouter: { baseUrl: 'https://openrouter.ai/api/v1', keyEnv: 'OPENROUTER_API_KEY', defaultModel: 'meta-llama/llama-3.3-70b-instruct:free' },
-  ollama: { baseUrl: 'http://localhost:11434/v1', keyEnv: null, defaultModel: 'qwen2.5:7b' },
 }
 
-/** LLM_PROVIDER if set, else the first hosted provider with a key, else local Ollama. */
+/** LLM_PROVIDER if set, else the first provider with a key. No key is an error, never a silent fallback. */
 export function providerFromEnv(env: NodeJS.ProcessEnv = process.env): LlmProvider {
-  const name = env.LLM_PROVIDER ?? Object.keys(PRESETS).find((p) => PRESETS[p].keyEnv && env[PRESETS[p].keyEnv!]) ?? 'ollama'
+  const name = env.LLM_PROVIDER ?? Object.keys(PRESETS).find((p) => env[PRESETS[p].keyEnv])
+  if (!name) throw new Error(`No model configured. Copy .env.example to .env and set one of ${Object.values(PRESETS).map((p) => p.keyEnv).join(', ')}.`)
   const preset = PRESETS[name]
   if (!preset) throw new Error(`Unknown LLM_PROVIDER "${name}". Use one of: ${Object.keys(PRESETS).join(', ')}.`)
-  const apiKey = preset.keyEnv ? env[preset.keyEnv] : undefined
-  if (preset.keyEnv && !apiKey) throw new Error(`LLM_PROVIDER=${name} needs ${preset.keyEnv} in the environment or .env.`)
+  const apiKey = env[preset.keyEnv]
+  if (!apiKey) throw new Error(`LLM_PROVIDER=${name} needs ${preset.keyEnv}. Copy .env.example to .env and set it.`)
   return openAiCompatible({
     name,
     baseUrl: env.LLM_BASE_URL ?? preset.baseUrl,
@@ -63,15 +63,13 @@ class HttpError extends Error {
     message: string,
     readonly status?: number,
     readonly network = false,
+    readonly retryAfterS?: number,
   ) {
     super(message)
   }
 }
 
-/**
- * POST JSON with node:http(s) rather than fetch. fetch gives up after 300 s without response
- * headers whatever timeout you pass, and a local model on a busy CPU can take longer than that.
- */
+/** POST JSON with node:http(s), so the timeout is the one we pass and the retry-after header is readable. */
 function postJson(url: string, headers: Record<string, string>, body: unknown, timeoutMs: number, name: string): Promise<unknown> {
   const payload = JSON.stringify(body)
   const send = url.startsWith('https:') ? httpsRequest : httpRequest
@@ -82,7 +80,7 @@ function postJson(url: string, headers: Record<string, string>, body: unknown, t
       res.on('end', () => {
         const text = Buffer.concat(chunks).toString('utf8')
         const status = res.statusCode ?? 0
-        if (status < 200 || status >= 300) return reject(new HttpError(`${name} returned HTTP ${status}: ${text.slice(0, 200)}`, status))
+        if (status < 200 || status >= 300) return reject(new HttpError(`${name} returned HTTP ${status}: ${text.slice(0, 200)}`, status, false, Number(res.headers['retry-after']) || undefined))
         try {
           resolve(JSON.parse(text))
         } catch {
@@ -96,17 +94,22 @@ function postJson(url: string, headers: Record<string, string>, body: unknown, t
   })
 }
 
-export function openAiCompatible(config: { name: string; baseUrl: string; apiKey?: string; model: string; timeoutMs: number }): LlmProvider {
+export function openAiCompatible(config: { name: string; baseUrl: string; apiKey: string; model: string; timeoutMs: number }): LlmProvider {
+  // Reasoning models spend completion tokens thinking before they answer, so the caller's cap (sized for the
+  // answer alone) would cut the JSON off. Keep the thinking short and give it its own headroom.
+  const reasoning = /gpt-oss|deepseek-r1/.test(config.model)
+
   async function once(messages: ChatMessage[], options: { temperature?: number; maxTokens?: number }) {
     const started = Date.now()
     const data = (await postJson(
       `${config.baseUrl}/chat/completions`,
-      config.apiKey ? { authorization: `Bearer ${config.apiKey}` } : {},
+      { authorization: `Bearer ${config.apiKey}` },
       {
         model: config.model,
         messages,
         temperature: options.temperature ?? 0,
-        max_tokens: options.maxTokens ?? 900,
+        max_tokens: (options.maxTokens ?? 900) + (reasoning ? 1500 : 0),
+        ...(reasoning && config.name === 'groq' ? { reasoning_effort: 'low' } : {}),
         response_format: { type: 'json_object' },
       },
       config.timeoutMs,
@@ -127,15 +130,20 @@ export function openAiCompatible(config: { name: string; baseUrl: string; apiKey
     name: config.name,
     model: config.model,
     async completeJson(messages, options = {}) {
-      try {
-        return await once(messages, options)
-      } catch (error) {
-        // One patient retry for rate limits, transient server errors and dropped connections; anything else is the caller's problem.
-        const status = (error as { status?: number }).status
-        const network = (error as { network?: boolean }).network === true
-        if (!network && status !== 429 && !(status && status >= 500)) throw error
-        await new Promise((resolve) => setTimeout(resolve, 5_000))
-        return once(messages, options)
+      // Patient retries for rate limits (honouring retry-after, as free tiers throttle per minute), transient
+      // server errors and dropped connections; anything else is the caller's problem.
+      for (let attempt = 0; ; attempt++) {
+        try {
+          return await once(messages, options)
+        } catch (error) {
+          const { status, network, retryAfterS } = error as { status?: number; network?: boolean; retryAfterS?: number }
+          const rateLimited = status === 429
+          if (!network && !rateLimited && !(status && status >= 500)) throw error
+          if (attempt >= (rateLimited ? 8 : 1)) throw error
+          // A wait this long means a daily quota, not a per-minute one: fail now rather than hang.
+          if (retryAfterS && retryAfterS > 120) throw error
+          await new Promise((resolve) => setTimeout(resolve, Math.min(60_000, (retryAfterS ?? 5) * 1000 + 500)))
+        }
       }
     },
   }

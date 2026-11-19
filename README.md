@@ -20,10 +20,10 @@ To call a model instead of replaying:
 
 ```bash
 cp .env.example .env            # set ONE of GROQ_API_KEY / GEMINI_API_KEY / OPENROUTER_API_KEY
-npm run analyze -- --live       # or leave .env empty and run Ollama: `ollama pull qwen2.5:7b`
+npm run analyze -- --live
 ```
 
-`--live` is cache-first: an email whose recording exists is not sent again. `--fresh` ignores the recordings. If you edit `data/inbox.json` without a model configured, the changed emails are reported as "could not be analysed" rather than guessed.
+`--live` is cache-first: an email whose recording exists is not sent again. `--fresh` ignores the recordings. With no key, `--live` stops with an error pointing at `.env.example`. If you edit `data/inbox.json` without a model configured, the changed emails are reported as "could not be analysed" rather than guessed.
 
 | Output | What it is |
 | --- | --- |
@@ -64,7 +64,7 @@ The rule for the split: **if this is wrong, would the creator notice?** A clumsy
 | Word the reply | Choose the action, write the points, add greeting and sign-off, check the result | `src/llm/draft.ts`, `src/core/draftGuard.ts` |
 | | Group threads, merge terms, write the summary | `src/core/deals.ts`, `summary.ts` |
 
-The model's own guess at the category is recorded and scored, but never used. On the supplied inbox that guess is right for 10 of 15 emails; the pipeline is right for 15 of 15. That gap is what the code layer buys.
+The model's own guess at the category is recorded and scored, but never used. On the supplied inbox that guess is right for 12 of 15 emails (10 of 15 on the held-out set); the pipeline is right for 15 of 15 on both. That gap is what the code layer buys.
 
 ### Untrusted email
 
@@ -76,7 +76,7 @@ The design assumes the model will sometimes be fooled and makes that not matter.
 - The drafting call never sees the email, only points written by code. The creator's phone number and address are not in the profile the pipeline holds.
 - Two regex backstops run on the raw text regardless of the model: text addressed to an AI, and platform lookalike domains.
 
-On the supplied injection email (E-07), the model was not hijacked, but it also did not label the injection; the code backstop did. `tests/pipeline.test.ts` covers the worse case, a model that obeys the email completely, and the result is still `report` with no draft.
+On the supplied injection email (E-07), the model was not hijacked, and the injection flag itself comes from the code backstop, not from the model. `tests/pipeline.test.ts` covers the worse case, a model that obeys the email completely, and the result is still `report` with no draft.
 
 ### Failing closed
 
@@ -95,44 +95,41 @@ Two label sets, both written by reading the emails against the profile before th
 - **Main**: the 15 supplied emails. `eval/labels.inbox.json`
 - **Held-out**: 15 more emails written for this eval, several of them deliberate traps. `eval/heldout/`. Nothing was changed after seeing results on this set.
 
-Model: `qwen2.5:7b` running locally on CPU through Ollama, temperature 0.
+Model: `openai/gpt-oss-120b` on Groq's free tier, temperature 0, one recorded run per set.
 
 | | Main (15 supplied) | Held-out (15 unseen) |
 | --- | --- | --- |
-| Email category | 15/15 | **13/15** |
-| Category from the model's own guess, no code | 10/15 | 8/15 |
+| Email category | 15/15 | **15/15** |
+| Category from the model's own guess, no code | 12/15 | 10/15 |
 | Emails grouped into the right deal | 13/13 | 14/14 |
-| Deal fields (brand, fee, currency, deliverables, deadline, usage) | 47/47 | **49/52** |
-| Recommended action | 13/13 | **11/14** |
-| Required risk flags raised | 13/13 | 10/12 |
-| High-severity flags that should not be there | 0 | 3 |
+| Deal fields (brand, fee, currency, deliverables, deadline, usage) | 47/47 | **50/52** |
+| Recommended action | 13/13 | **14/14** |
+| Required risk flags raised | 13/13 | 12/12 |
+| High-severity flags that should not be there | 0 | 0 |
 | Emails with invalid model output | 0 | 0 |
 
-**Run-to-run variance was not measured.** Extra live runs were started but the shared CPU this ran on was too slow to finish them in time, so there is one recorded run per set at temperature 0. `npm run eval -- --variance 3` does it when a model is available.
+**Run-to-run variance was not measured.** There is one recorded run per set at temperature 0, and a hosted model at temperature 0 is still not guaranteed to repeat itself. `npm run eval -- --variance 3` re-runs extraction on the main inbox and reports what changed; I ran out of time before the deadline to do it, so treat the table as a single sample.
 
-
-### How to read the main-set number
+### How to read these numbers
 
 The main set is a development set, and its score should be read that way. The honest history:
 
-1. **First complete run: 13/15 categories, 11/13 actions.** Two real failures. E-04 (Pixelon): the model answered "yes, competes with the smartphone exclusivity" but wrapped the quote in its own commentary, the quote check rejected it, and the pipeline recommended **accepting a deal that breaches the creator's exclusivity**. E-10 (AuralBuds): the model answered "yes, this asks the creator to pay" with the evidence `"Fee: USD 800"`, and a good deal was reported as a scam.
+1. **First complete run, with a much smaller model: 13/15 categories, 11/13 actions.** Two real failures. E-04 (Pixelon): the model answered "yes, competes with the smartphone exclusivity" but wrapped the quote in its own commentary, the quote check rejected it, and the pipeline recommended **accepting a deal that breaches the creator's exclusivity**. E-10 (AuralBuds): the model answered "yes, this asks the creator to pay" with the evidence `"Fee: USD 800"`, and a good deal was reported as a scam.
 2. Two fixes, both in code, both general: an unverifiable "yes" now sends the deal to `review_manually` instead of being dropped (and bracketed commentary is ignored when checking a quote); a payment demand needs a quote that reads like one.
-3. **After the fixes: 15/15.** Before that, an earlier design with a single model call had also been replaced after it missed the same exclusivity (see `DECISIONS.md` §3).
+3. **After the fixes: 15/15**, and the same with the model recorded here. Before that, an earlier design with a single model call had also been replaced after it missed the same exclusivity (see `DECISIONS.md` §3).
 
-So 15/15 is what the system scores on emails it was debugged against. The held-out number is the one that says something about new email.
+So 15/15 on the main set is what the system scores on emails it was debugged against. The held-out number says more about new email, with two caveats: the prompts and code were frozen before this model was ever run on the held-out set and nothing was changed afterwards, but it is still only 15 emails that I wrote myself, and a clean sweep on 15 emails is not evidence of a clean sweep on 1,500.
 
 ### What it got wrong on the held-out set, and why
 
-- **H-10, ShopSphere "affiliate programme" (the worst miss).** The creator has to buy a Rs 1,499 starter kit to take part. The model answered "no" to "does this ask the creator to pay?", so the email was treated as a commission-only offer and the recommendation was **negotiate**. A pay-to-play scam worded as a purchase got through. The safety override only helps once a signal is raised; here none was.
-- **H-05, CaseCraft phone cases.** The trap worked: the model said phone cases compete with the smartphone exclusivity, quoted real words from the email, and a good deal was **declined**. The quote check confirms the words exist, not that the judgement is right.
-- **H-06, Orbit Mobile (go-live after the exclusivity ends).** The model flagged the conflict but its evidence was not in the email, so the deal went to `review_manually` instead of "accept, with a warning". Safe, but not the label.
-- **H-07 + H-08, Peak Trail "add a second reel".** Grouped correctly and the reel count came out right, but the two stories from the first email were lost, because the follow-up was read without the earlier email. This is the thread-context weakness in `DECISIONS.md` §7.
-- **Brand names** for two scam/phishing senders (H-09, H-10) did not match the label. Cosmetic.
-- **3 unexpected high-severity flags**, listed in `eval/report.md`; they follow from the misses above.
+- **H-07 + H-08, Peak Trail "add a second reel".** Grouped correctly and the reel count came out right, but the two stories from the first email were lost, because the follow-up was read without the earlier email. This is the thread-context weakness in `DECISIONS.md` §7, and a stronger model does not fix it: it is a design gap.
+- **H-09, fake Instagram verification notice.** Correctly reported as phishing, but the brand came out as `Instagramverifyteam` rather than `Instagram`. Cosmetic, and arguably the label is the debatable one.
 
-What held up: the hidden injection inside a plausible offer (H-03) was caught, the Devanagari Hindi offer (H-02) and the USD offer with 12-month usage (H-13) were extracted and priced correctly, and betting described as "skill-based opinion trading" (H-15) was matched to the gambling rule.
+What held up: the pay-to-play "affiliate programme" (H-10), phone cases that only look like they breach the smartphone exclusivity (H-05), a competitor whose campaign starts after the exclusivity ends (H-06), the hidden injection inside a plausible offer (H-03), the Devanagari Hindi offer (H-02), the USD offer with 12-month usage (H-13), and betting described as "skill-based opinion trading" (H-15).
 
-Reply drafts were read by hand, not scored. The 7B model could not produce Hinglish that passed the language check for Chai & Co (E-06), so that reply is the English template.
+The model's own category guess is still wrong for 5 of the 15 held-out emails, so the code layer is doing real work even with a 120B model.
+
+Reply drafts were read by hand, not scored. All nine drafts on the main inbox are the model's wording and passed the guard, including a Hinglish reply to Chai & Co (E-06); one needed a second attempt.
 
 
 ### What the labels do not settle
@@ -141,23 +138,26 @@ Four labels are judgement calls and are marked as such in the label files: E-06 
 
 ## Cost and time
 
-Measured from the recorded run of the 15 supplied emails (`out/analysis.json` → `stats`):
+Measured from the recorded run of the 15 supplied emails (`recordings/inbox.json`, `out/analysis.json` → `stats`):
 
 | Call | Count | Prompt tokens (avg) | Completion tokens (avg) |
 | --- | --- | --- | --- |
-| extract (every email) | 15 | 1,467 | 204 |
-| check (brand outreach only) | 13 | 679 | 93 |
-| draft (deals that get a reply, incl. 2 retries) | 11 | 253 | 60 |
-| **Per email, all calls** | | **about 2,240** | **about 325** |
+| extract (every email, incl. 1 retry) | 16 | 1,549 | 360 |
+| check (brand outreach only) | 13 | 764 | 239 |
+| draft (deals that get a reply, incl. 1 retry) | 9 | 329 | 83 |
+| **Per email, all calls** | | **about 2,530** | **about 650** |
 
-- **Cost per email as run: zero.** It is a local open-weights model.
-- **Time per email as run: about 3 minutes**, on 3 CPU threads of a shared VM that was busy with other work (median 106 s for an extraction). That number describes the machine, not the design. The same model on a laptop GPU, or a hosted small model, should take a few seconds per email, but I did not measure that and will not quote a figure.
-- **The hosted path was not exercised.** No Groq, Gemini or OpenRouter key was available while building. The provider interface is one OpenAI-compatible client (`src/llm/provider.ts`), so it is the same code with a different base URL, but "should work" is not "was run".
+Completion tokens include the model's (low-effort) reasoning, which is why they are higher than the JSON alone.
 
-**At 1,000 emails a day** that is about 2.2M prompt and 0.33M completion tokens.
+- **Cost per email as run: zero**, on Groq's free tier.
+- **Model time per email: about 2.2 seconds** across its calls (33 s of model time for 15 emails; about 1.2 s for an extraction, 0.8 s for a check, 0.5 s for a draft).
+- **Wall-clock for the whole inbox was about 4 minutes**, almost all of it waiting on the free tier's 8,000 tokens-per-minute limit. The client honours `retry-after` on HTTP 429.
 
-- Free tiers will not cover it. Their daily token and request caps are sized for prototyping; I have not verified current limits, so check before relying on one. Budget for a paid small model. At an illustrative $0.10 to $0.60 per million tokens that is roughly $0.25 to $1.50 a day. Model cost is not the constraint.
-- About 1,350 of the 1,467 extraction prompt tokens are a fixed prefix (instructions and example), so provider-side prompt caching would cut the input bill substantially.
+**At 1,000 emails a day** that is about 2.5M prompt and 0.65M completion tokens.
+
+- The free tier will not cover it: at 8,000 tokens a minute, 3.2M tokens is over six hours of continuous calls, before any daily cap.
+- On Groq's paid tier, at the $0.15 per million input and $0.60 per million output tokens I have for `gpt-oss-120b` (check the current price list before relying on it), that is about $0.38 + $0.39 = **roughly $0.80 a day, under a tenth of a cent per email**. Model cost is not the constraint.
+- About 1,400 of the 1,549 extraction prompt tokens are a fixed prefix (instructions and example), so provider-side prompt caching would cut the input bill substantially.
 - Emails are independent until the grouping step, so extraction parallelises behind a rate limiter. The pipeline here is sequential on purpose, for free-tier limits.
 - Recordings are keyed by content hash, so re-running an inbox only pays for new emails. In production that cache moves to a database.
 - A deterministic pre-filter (bulk-mail headers such as `List-Unsubscribe`) would keep newsletters away from the model entirely.
@@ -166,7 +166,7 @@ Measured from the recorded run of the 15 supplied emails (`out/analysis.json` �
 ## With another week
 
 1. **Thread-aware extraction.** Pass the deal's merged terms into the extraction call so a follow-up like "add a second reel" can be resolved. Today each email is read alone.
-2. **Run and compare hosted models** (Groq, Gemini) on the same two label sets, and check whether the three-call design is still worth it with a stronger model or collapses back to one.
+2. **Measure variance and compare models** (a second Groq model, Gemini) on the same two label sets, and check whether the three-call design is still worth it with a model this size or collapses back to one.
 3. **Feedback as eval data.** Let the creator correct a category or action in the UI and append it to the label set.
 4. **Real mail.** Gmail read-only via OAuth, proper thread headers, attachments (E-15's brief is a PDF nobody read).
 5. **Structured profile.** Replace the regex over free-text profile fields with fields the creator confirms once.
@@ -178,7 +178,7 @@ Measured from the recorded run of the 15 supplied emails (`out/analysis.json` �
 I built this by directing AI coding agents, including Claude (Claude Code), rather than typing most of the code myself.
 
 - The first version came from a weaker model with little steering: a regex rules engine and a self-graded 15/15. I judged that unconvincing and had it rebuilt.
-- For the rebuild I set the direction: the model/code boundary, a free model behind one interface, recorded responses, hand labels before results, a separate held-out set, failing closed. The agent wrote the code, ran the local model, read its raw outputs, and proposed the changes described above when the first real runs failed.
+- For the rebuild I set the direction: the model/code boundary, a free model behind one interface, recorded responses, hand labels before results, a separate held-out set, failing closed. The agent wrote the code, ran the model, read its raw outputs, and proposed the changes described above when the first real runs failed.
 - The hand labels and the held-out emails were also drafted by the agent, from reading the emails, and committed before the pipeline was run on them. They are my responsibility to stand behind, and the debatable ones are marked.
 - The UI was built by the agent against a design reference I supplied, and checked with real browser screenshots at desktop and phone widths.
 - What I would not delegate: deciding that the first version was not good enough, what counts as evidence in the evaluation, and which failures to report.
@@ -188,7 +188,7 @@ I built this by directing AI coding agents, including Claude (Claude Code), rath
 ```
 src/types.ts            Zod schemas: inputs, model output, pipeline output
 src/llm/                everything that talks to a model
-  provider.ts             one OpenAI-compatible client (Groq, Gemini, OpenRouter, Ollama)
+  provider.ts             one OpenAI-compatible client (Groq, Gemini, OpenRouter)
   recordings.ts           record / replay, keyed by prompt version + message hash
   extract.ts check.ts draft.ts   the three prompts, validation and retry
 src/core/               deterministic, no network, unit-tested

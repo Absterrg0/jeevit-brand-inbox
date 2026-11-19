@@ -251,8 +251,8 @@ function Detail({ deal, mobile, onBack }: { deal: Deal; mobile: boolean; onBack:
           <p className={`d-why t-${tone(deal)}`}>{deal.why}</p>
         </header>
 
-        <section className="block">
-          {scam ? (
+        {scam && (
+          <section className="block">
             <div className="warning" role="alert">
               <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden>
                 <path d="M10 2.5 18 17H2L10 2.5Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
@@ -263,12 +263,8 @@ function Detail({ deal, mobile, onBack }: { deal: Deal; mobile: boolean; onBack:
                 <p>This looks like a scam, so there is no draft. Report the sender as phishing in your mail app and delete it. If you clicked something, change your passwords.</p>
               </div>
             </div>
-          ) : deal.draft ? (
-            <Draft draft={deal.draft} />
-          ) : (
-            <p className="none-note">No reply needed.</p>
-          )}
-        </section>
+          </section>
+        )}
 
         {!scam && (
           <section className="block" aria-label="Terms">
@@ -328,6 +324,12 @@ function Detail({ deal, mobile, onBack }: { deal: Deal; mobile: boolean; onBack:
           </section>
         )}
 
+
+        {!scam && (
+          <section className="block">
+            {deal.draft ? <Draft draft={deal.draft} /> : <p className="none-note">No reply needed.</p>}
+          </section>
+        )}
 
         <section className="block">
           <h3 className="label">

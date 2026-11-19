@@ -3,14 +3,16 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import type { Action, Category, Severity } from '../src/types'
 import { cx } from './lib'
 
-export const ACTION: Record<Action, { label: string; icon: LucideIcon; group: 'reply' | 'decline' | 'leave' }> = {
-  accept: { label: 'Accept', icon: Check, group: 'reply' },
-  negotiate: { label: 'Negotiate', icon: ArrowLeftRight, group: 'reply' },
-  ask_for_details: { label: 'Ask for details', icon: MessageCircleQuestion, group: 'reply' },
-  review_manually: { label: 'Read it yourself', icon: ScanEye, group: 'reply' },
-  decline: { label: 'Decline', icon: Ban, group: 'decline' },
-  report: { label: 'Report', icon: FlagIcon, group: 'leave' },
-  ignore: { label: 'Ignore', icon: EyeOff, group: 'leave' },
+export type Bucket = 'reply' | 'decline' | 'report' | 'ignore'
+
+export const ACTION: Record<Action, { label: string; icon: LucideIcon; bucket: Bucket; tone: string }> = {
+  accept: { label: 'Accept', icon: Check, bucket: 'reply', tone: 'text-label-green' },
+  negotiate: { label: 'Negotiate', icon: ArrowLeftRight, bucket: 'reply', tone: 'text-label-blue' },
+  ask_for_details: { label: 'Ask for details', icon: MessageCircleQuestion, bucket: 'reply', tone: 'text-label-violet' },
+  review_manually: { label: 'Read it yourself', icon: ScanEye, bucket: 'reply', tone: 'text-quiet-ink' },
+  decline: { label: 'Decline', icon: Ban, bucket: 'decline', tone: 'text-label-orange' },
+  report: { label: 'Report as scam', icon: FlagIcon, bucket: 'report', tone: 'text-label-red' },
+  ignore: { label: 'Ignore', icon: EyeOff, bucket: 'ignore', tone: 'text-muted-foreground' },
 }
 
 export const CATEGORY: Record<Category, { label: string; dot: string }> = {
@@ -59,10 +61,10 @@ export function Chip({ dot, children, className }: { dot?: string; children: Rea
 export const CategoryChip = ({ category }: { category: Category }) => <Chip dot={CATEGORY[category].dot}>{CATEGORY[category].label}</Chip>
 
 export function ActionChip({ action }: { action: Action }) {
-  const { label, icon: Icon } = ACTION[action]
+  const { label, icon: Icon, tone } = ACTION[action]
   return (
-    <span className="inline-flex h-[26px] shrink-0 items-center gap-1.5 rounded-[8px] bg-card px-2 text-[12.5px] font-medium whitespace-nowrap text-foreground shadow-raised">
-      <Icon aria-hidden className="size-3.5 text-muted-foreground" />
+    <span className={cx('inline-flex h-[26px] shrink-0 items-center gap-1.5 rounded-[8px] bg-card px-2 text-[12.5px] font-medium whitespace-nowrap shadow-raised', tone)}>
+      <Icon aria-hidden className="size-3.5" />
       {label}
     </span>
   )
@@ -81,30 +83,6 @@ export function Button({ variant = 'secondary', className, ...props }: ButtonHTM
       )}
       {...props}
     />
-  )
-}
-
-/** A recessed track with the selected segment raised, as in the reference's stage filter. */
-export function Segmented<T extends string>({ value, onChange, options, label }: { value: T; onChange: (v: T) => void; options: { id: T; label: string; count?: number }[]; label: string }) {
-  return (
-    <div role="tablist" aria-label={label} className="flex h-8 w-fit max-w-full shrink-0 items-center gap-1 overflow-x-auto rounded-[10px] bg-track p-[3px] shadow-sunk">
-      {options.map((o) => (
-        <button
-          key={o.id}
-          type="button"
-          role="tab"
-          aria-selected={value === o.id}
-          onClick={() => onChange(o.id)}
-          className={cx(
-            'inline-flex h-[26px] items-center gap-1.5 rounded-[7px] px-2.5 text-[12.5px] font-medium whitespace-nowrap transition-[background-color,box-shadow,color]',
-            value === o.id ? 'bg-thumb text-foreground shadow-raised dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.07)]' : 'text-muted-foreground hover:text-foreground',
-          )}
-        >
-          {o.label}
-          {o.count !== undefined && <span className="font-normal text-subtle-foreground tabular-nums">{o.count}</span>}
-        </button>
-      ))}
-    </div>
   )
 }
 

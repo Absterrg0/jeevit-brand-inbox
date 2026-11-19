@@ -1,8 +1,8 @@
-import { ArrowLeft, Check, Copy, MailX } from 'lucide-react'
+import { Check, Copy, MailX } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import type { Analysis, Deal, EmailResult, Flag } from '../src/types'
 import { cx, dueText, inr, offerText, scopeText, shortDate } from './lib'
-import { ACTION, BrandTile, Button, CATEGORY, CategoryChip, Chip, SectionTitle, SEVERITY } from './ui'
+import { Button, CATEGORY, CategoryChip, Chip, SectionTitle, SEVERITY } from './ui'
 
 function Property({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -66,7 +66,6 @@ function Risk({ flag }: { flag: Flag }) {
         <p className="text-[13.5px] font-medium text-foreground">{flag.title}</p>
         <p className="mt-0.5 text-[13px] leading-relaxed text-secondary-foreground">{flag.reason}</p>
         {flag.evidence && <p className="mt-1.5 border-l-2 border-border pl-2.5 text-[12.5px] leading-relaxed text-muted-foreground italic">“{flag.evidence}”</p>}
-        <p className="mt-1.5 text-[11.5px] text-subtle-foreground">{flag.source === 'code' ? 'Checked by code' : 'Spotted by the model, quote verified in the email'}</p>
       </div>
     </li>
   )
@@ -130,86 +129,46 @@ function ThreadEmail({ email, latest }: { email: EmailResult; latest: boolean })
   )
 }
 
-export function DealDetail({ deal, analysis, onBack }: { deal: Deal; analysis: Analysis; onBack: () => void }) {
-  const { label, icon: Icon } = ACTION[deal.action]
+/** Everything behind a card: terms, every reason with its quote, the draft, the emails. */
+export function DealBody({ deal, analysis }: { deal: Deal; analysis: Analysis }) {
   const emails = deal.emailIds.map((id) => analysis.emails.find((e) => e.id === id)!)
   const feeMove = deal.history.filter((h) => h.field === 'fee').at(-1)
+  const real = deal.category === 'deal_offer' || deal.category === 'not_a_fit' || deal.category === 'needs_more_info'
   return (
-    <article data-scrollbar className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto flex max-w-[760px] flex-col gap-7 px-4 pt-4 pb-10 sm:px-7 sm:pt-6">
-        <header className="flex items-start gap-3">
-          <button type="button" onClick={onBack} aria-label="Back to the list" className="-ml-1 inline-flex size-8 shrink-0 items-center justify-center rounded-[9px] text-muted-foreground hover:bg-accent hover:text-foreground lg:hidden">
-            <ArrowLeft className="size-4" />
-          </button>
-          <BrandTile name={deal.brand} size="lg" />
-          <div className="min-w-0 flex-1">
-            <h2 className="truncate text-[19px] leading-tight font-semibold tracking-[-0.02em]">{deal.brand}</h2>
-            <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
-              {deal.contact.name ? `${deal.contact.name} · ` : ''}
-              {deal.contact.email}
-            </p>
-          </div>
-          <div className="hidden shrink-0 sm:block">
-            <CategoryChip category={deal.category} />
-          </div>
-        </header>
-
-        <section className="rounded-[14px] bg-card p-4 shadow-raised">
-          <div className="flex items-center gap-2.5">
-            <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-ink text-primary-foreground shadow-ink">
-              <Icon aria-hidden className="size-4" />
-            </span>
-            <div>
-              <p className="text-[11.5px] text-muted-foreground">Recommended next step</p>
-              <p className="text-[15px] leading-tight font-semibold tracking-[-0.01em]">{label}</p>
-            </div>
-            <div className="ml-auto sm:hidden">
-              <CategoryChip category={deal.category} />
-            </div>
-          </div>
-          <p className="mt-3 text-[13.5px] leading-relaxed text-secondary-foreground">{deal.why}</p>
+    <div className="flex flex-col gap-6 border-t border-border-muted px-4 pt-4 pb-5 sm:px-5">
+      {real && (
+        <section>
+          <SectionTitle>The deal, using the latest terms</SectionTitle>
+          <Terms deal={deal} today={analysis.today} />
           {feeMove && (
             <p className="mt-2 text-[12.5px] text-muted-foreground">
-              Their fee moved from {feeMove.from} to {feeMove.to} in {feeMove.emailId}.
+              Their fee moved from {feeMove.from} to {feeMove.to}.
             </p>
           )}
         </section>
-
-        {(deal.category === 'deal_offer' || deal.category === 'not_a_fit' || deal.category === 'needs_more_info') && (
-          <section>
-            <SectionTitle>The deal, using the latest terms</SectionTitle>
-            <Terms deal={deal} today={analysis.today} />
-            {deal.terms.otherTerms.length > 0 && <p className="mt-2 text-[12.5px] text-muted-foreground">Also in the emails: {deal.terms.otherTerms.join(' · ')}</p>}
-          </section>
-        )}
-
+      )}
+      {deal.flags.length > 0 && (
         <section>
-          <SectionTitle aside={deal.flags.length > 0 && <span className="text-[12px] text-subtle-foreground tabular-nums">{deal.flags.length}</span>}>What to watch</SectionTitle>
-          {deal.flags.length ? (
-            <ul className="divide-y divide-border-muted">
-              {deal.flags.map((f, i) => (
-                <Risk key={`${f.code}-${i}`} flag={f} />
-              ))}
-            </ul>
-          ) : (
-            <p className="text-[13px] text-muted-foreground">Nothing flagged against your rates, rules or exclusivity.</p>
-          )}
-        </section>
-
-        <section>
-          <SectionTitle>Draft reply</SectionTitle>
-          <Draft deal={deal} />
-        </section>
-
-        <section>
-          <SectionTitle aside={<span className="text-[12px] text-subtle-foreground tabular-nums">{emails.length}</span>}>{emails.length > 1 ? 'Emails in this deal' : 'The email'}</SectionTitle>
-          <ul className="flex flex-col gap-2.5">
-            {emails.map((e) => (
-              <ThreadEmail key={e.id} email={e} latest={emails.length > 1 && e.id === deal.latestEmailId} />
+          <SectionTitle>Why</SectionTitle>
+          <ul className="divide-y divide-border-muted">
+            {deal.flags.map((f, i) => (
+              <Risk key={`${f.code}-${i}`} flag={f} />
             ))}
           </ul>
         </section>
-      </div>
-    </article>
+      )}
+      <section>
+        <SectionTitle>{deal.draft ? 'Draft reply' : 'Reply'}</SectionTitle>
+        <Draft deal={deal} />
+      </section>
+      <details>
+        <summary className="cursor-pointer text-[12px] font-medium text-muted-foreground select-none hover:text-foreground">{emails.length > 1 ? `Read the ${emails.length} emails` : 'Read the email'}</summary>
+        <ul className="mt-2.5 flex flex-col gap-2.5">
+          {emails.map((e) => (
+            <ThreadEmail key={e.id} email={e} latest={emails.length > 1 && e.id === deal.latestEmailId} />
+          ))}
+        </ul>
+      </details>
+    </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useState } from 'react'
 import type { Deal, Terms } from '../src/types'
 
 export const cx = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' ')
@@ -41,38 +41,6 @@ export function dueText(today: string, deal: Deal): { text: string; urgent: bool
   const days = daysUntil(today, date)
   if (days < 0) return { text: `${shortDate(date)}, already passed`, urgent: true }
   return { text: `${shortDate(date, !date.startsWith(today.slice(0, 4)))} · ${days === 0 ? 'today' : `${days}d`}`, urgent: days < 5 }
-}
-
-/** `#/today/D-03` or `#/inbox`. Enough routing for two views and a selection. */
-function readHash() {
-  const [view = 'today', id = null] = window.location.hash.replace(/^#\/?/, '').split('/')
-  return { view: view === 'inbox' ? ('inbox' as const) : ('today' as const), id: id || null }
-}
-
-export function useRoute() {
-  const [route, setRoute] = useState(readHash)
-  useEffect(() => {
-    const onChange = () => setRoute(readHash())
-    window.addEventListener('hashchange', onChange)
-    return () => window.removeEventListener('hashchange', onChange)
-  }, [])
-  return route
-}
-
-export const go = (path: string) => {
-  window.location.hash = path
-}
-
-export function useIsDesktop() {
-  const query = '(min-width: 1024px)'
-  return useSyncExternalStore(
-    (notify) => {
-      const m = window.matchMedia(query)
-      m.addEventListener('change', notify)
-      return () => m.removeEventListener('change', notify)
-    },
-    () => window.matchMedia(query).matches,
-  )
 }
 
 export function useTheme() {

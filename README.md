@@ -206,10 +206,10 @@ recordings/             recorded model responses
 tests/                  56 tests
 ```
 
-The UI is a bonus: a Today list ordered by what needs a reply, the reasons for each flag with the quoted evidence, and a draft to copy. Light and dark, desktop and phone.
+The UI is a bonus, and deliberately one page: four counts (reply, decline, report, ignore) that also filter, then one list in priority order. A card opens in place to show the terms, each reason with the quoted evidence, and a draft to copy. Light and dark, desktop and phone.
 
 | | |
 | --- | --- |
-| ![Deal detail on a phone](docs/deal-phone.png) | ![Dark theme](docs/today-dark.png) |
+| ![A deal opened on a phone](docs/deal-phone.png) | ![Dark theme, one deal open](docs/today-dark.png) |
 
 See [`DECISIONS.md`](DECISIONS.md) for the trade-offs and the known weaknesses.

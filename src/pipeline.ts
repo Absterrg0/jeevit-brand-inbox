@@ -2,6 +2,7 @@
  * The whole pipeline, in the order it runs:
  *
  *   1. model   extract facts from each email            (llm/extract.ts)
+ *      model   answer one yes/no question per rule      (llm/check.ts)
  *   2. code    verify quotes, parse money and dates     (core/facts.ts)
  *   3. code    group emails into deals, latest terms    (core/deals.ts)
  *   4. code    category, risk flags against profile     (core/deals.ts, core/risk.ts)
@@ -13,10 +14,12 @@ import { displayBrand } from './core/brand'
 import { categorise, groupEmails, mergeTerms, pickContact } from './core/deals'
 import { safeName, templateDraft } from './core/draftGuard'
 import { buildFacts, type EmailFacts } from './core/facts'
+import { replyLanguage } from './core/language'
 import { counterOffer, decideAction, explain, rankDeals, replyPoints, REPLY_ACTIONS } from './core/policy'
 import { derivePolicy, firstName } from './core/profile'
 import { buildFlags, findBlocks, rateCheck } from './core/risk'
 import { buildSummary } from './core/summary'
+import { CHECK_PROMPT_VERSION, checkEmail } from './llm/check'
 import { DRAFT_PROMPT_VERSION, writeDraft } from './llm/draft'
 import { extractEmail, EXTRACT_PROMPT_VERSION } from './llm/extract'
 import type { RecordedLlm } from './llm/recordings'
@@ -40,7 +43,14 @@ export async function analyseInbox(emails: Email[], profile: Profile, llm: Recor
     say(`reading ${email.id}`)
     const { extraction, error } = await extractEmail(llm, email, profile, { temperature: options.temperature })
     if (error) errors.set(email.id, error)
-    facts.push(buildFacts(email, extraction, profile, policy))
+    // Only real outreach is worth checking against the rules; newsletters and notices are not offers.
+    let check = null
+    if (extraction?.email_kind === 'brand_outreach') {
+      const checked = await checkEmail(llm, email, profile, { temperature: options.temperature })
+      check = checked.result
+      if (checked.error) errors.set(email.id, checked.error)
+    }
+    facts.push(buildFacts(email, extraction, profile, policy, check))
   }
 
   // 3–5.
@@ -68,10 +78,12 @@ export async function analyseInbox(emails: Email[], profile: Profile, llm: Recor
         categoryReason: errors.get(f.email.id) ?? reason,
         modelCategory: f.extraction?.suggested_category ?? null,
         dealId,
-        language: f.extraction?.language ?? null,
+        language: replyLanguage(f.email.body, profile),
         summary: f.extraction?.summary ?? null,
         extraction: f.extraction,
         signals: f.signals,
+        promotes: f.promotes,
+        rulesChecked: f.rulesChecked,
         droppedClaims: f.droppedClaims,
       })
     })
@@ -108,7 +120,7 @@ export async function analyseInbox(emails: Email[], profile: Profile, llm: Recor
 
     if (REPLY_ACTIONS.has(action)) {
       const points = replyPoints({ action, terms, flags, rate, counter, history, blocks, profile, policy })
-      pendingDrafts.push({ deal, points, language: latest.extraction?.language ?? 'English' })
+      pendingDrafts.push({ deal, points, language: replyLanguage(latest.email.body, profile) })
     }
   })
 
@@ -136,7 +148,7 @@ export async function analyseInbox(emails: Email[], profile: Profile, llm: Recor
       mode: llm.mode === 'replay' ? 'replay' : 'live',
       provider: [...llm.log.providers].join(', ') || 'none',
       model: [...llm.log.models].join(', ') || 'none',
-      promptVersion: `${EXTRACT_PROMPT_VERSION}, ${DRAFT_PROMPT_VERSION}`,
+      promptVersion: `${EXTRACT_PROMPT_VERSION}, ${CHECK_PROMPT_VERSION}, ${DRAFT_PROMPT_VERSION}`,
       calls: llm.log.calls,
       failures: llm.log.failures,
       retries: llm.log.retries,

@@ -7,6 +7,9 @@
  * calling, no browsing. The only thing it can do is return text.
  */
 
+import { request as httpRequest } from 'node:http'
+import { request as httpsRequest } from 'node:https'
+
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant'
   content: string
@@ -55,27 +58,60 @@ export function providerFromEnv(env: NodeJS.ProcessEnv = process.env): LlmProvid
   })
 }
 
+class HttpError extends Error {
+  constructor(
+    message: string,
+    readonly status?: number,
+    readonly network = false,
+  ) {
+    super(message)
+  }
+}
+
+/**
+ * POST JSON with node:http(s) rather than fetch. fetch gives up after 300 s without response
+ * headers whatever timeout you pass, and a local model on a busy CPU can take longer than that.
+ */
+function postJson(url: string, headers: Record<string, string>, body: unknown, timeoutMs: number, name: string): Promise<unknown> {
+  const payload = JSON.stringify(body)
+  const send = url.startsWith('https:') ? httpsRequest : httpRequest
+  return new Promise((resolve, reject) => {
+    const req = send(url, { method: 'POST', headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(payload), ...headers } }, (res) => {
+      const chunks: Buffer[] = []
+      res.on('data', (c: Buffer) => chunks.push(c))
+      res.on('end', () => {
+        const text = Buffer.concat(chunks).toString('utf8')
+        const status = res.statusCode ?? 0
+        if (status < 200 || status >= 300) return reject(new HttpError(`${name} returned HTTP ${status}: ${text.slice(0, 200)}`, status))
+        try {
+          resolve(JSON.parse(text))
+        } catch {
+          reject(new HttpError(`${name} returned a body that is not JSON`, status))
+        }
+      })
+    })
+    req.setTimeout(timeoutMs, () => req.destroy(new HttpError(`${name} did not answer within ${Math.round(timeoutMs / 1000)} s`, undefined, true)))
+    req.on('error', (e) => reject(e instanceof HttpError ? e : new HttpError(`${name} request failed: ${e.message}`, undefined, true)))
+    req.end(payload)
+  })
+}
+
 export function openAiCompatible(config: { name: string; baseUrl: string; apiKey?: string; model: string; timeoutMs: number }): LlmProvider {
   async function once(messages: ChatMessage[], options: { temperature?: number; maxTokens?: number }) {
     const started = Date.now()
-    const response = await fetch(`${config.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', ...(config.apiKey ? { authorization: `Bearer ${config.apiKey}` } : {}) },
-      body: JSON.stringify({
+    const data = (await postJson(
+      `${config.baseUrl}/chat/completions`,
+      config.apiKey ? { authorization: `Bearer ${config.apiKey}` } : {},
+      {
         model: config.model,
         messages,
         temperature: options.temperature ?? 0,
         max_tokens: options.maxTokens ?? 900,
         response_format: { type: 'json_object' },
-      }),
-      signal: AbortSignal.timeout(config.timeoutMs),
-    })
-    if (!response.ok) {
-      const error = new Error(`${config.name} returned HTTP ${response.status}: ${(await response.text()).slice(0, 200)}`)
-      ;(error as Error & { status?: number }).status = response.status
-      throw error
-    }
-    const data = (await response.json()) as {
+      },
+      config.timeoutMs,
+      config.name,
+    )) as {
       choices?: { message?: { content?: string } }[]
       usage?: { prompt_tokens?: number; completion_tokens?: number }
     }
@@ -94,9 +130,10 @@ export function openAiCompatible(config: { name: string; baseUrl: string; apiKey
       try {
         return await once(messages, options)
       } catch (error) {
-        // One patient retry for rate limits and transient server errors; anything else is the caller's problem.
+        // One patient retry for rate limits, transient server errors and dropped connections; anything else is the caller's problem.
         const status = (error as { status?: number }).status
-        if (status !== 429 && !(status && status >= 500)) throw error
+        const network = (error as { network?: boolean }).network === true
+        if (!network && status !== 429 && !(status && status >= 500)) throw error
         await new Promise((resolve) => setTimeout(resolve, 5_000))
         return once(messages, options)
       }

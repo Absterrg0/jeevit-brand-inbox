@@ -5,7 +5,8 @@
  * The drafting model is given the points to make (written by policy.ts) and
  * never the raw email, so there is little for an attacker to steer. These
  * checks cover the rest: a draft may not introduce a figure, a link, an email
- * address or a phone number that the policy did not put there.
+ * address or a phone number that the policy did not put there, and it may not
+ * drop a figure the policy did put there.
  */
 
 const digits = (s: string) => s.replace(/[,\s]/g, '')
@@ -19,7 +20,10 @@ function bigNumbers(text: string): string[] {
 export function draftProblems(body: string, points: string[]): string[] {
   const problems: string[] = []
   const allowed = new Set(bigNumbers(points.join(' ')))
-  for (const n of bigNumbers(body)) if (!allowed.has(n)) problems.push(`contains a number that is not in the notes: ${n}`)
+  const used = new Set(bigNumbers(body))
+  for (const n of used) if (!allowed.has(n)) problems.push(`contains a number that is not in the notes: ${n}`)
+  for (const n of allowed) if (!used.has(n)) problems.push(`leaves out a figure from the notes: ${n}`)
+  if (/^\s*(hi|hey|hello|dear|namaste|नमस्ते)\b/iu.test(body)) problems.push('starts with a greeting (the greeting is added separately)')
   if (/https?:\/\/|www\./i.test(body)) problems.push('contains a link')
   if (/[\w.+-]+@[\w-]+\.[\w.]+/.test(body)) problems.push('contains an email address')
   if (/(\+?\d[\s-]?){10,}/.test(body)) problems.push('contains something that looks like a phone number')
@@ -28,9 +32,14 @@ export function draftProblems(body: string, points: string[]): string[] {
   return problems
 }
 
+/** The greeting and sign-off are added by code, so the model cannot get the names the wrong way round. */
+export function wrapDraft(input: { greetingName: string | null; middle: string; signature: string }): string {
+  return [`Hi${input.greetingName ? ` ${input.greetingName}` : ''},`, '', input.middle.trim(), '', 'Best,', input.signature].join('\n')
+}
+
 /** Deterministic fallback: the policy's own sentences, in English. */
 export function templateDraft(input: { greetingName: string | null; points: string[]; signature: string }): string {
-  return [`Hi ${input.greetingName ?? 'there'},`, '', ...input.points.flatMap((p) => [p, '']), 'Best,', input.signature].join('\n')
+  return wrapDraft({ ...input, middle: input.points.join('\n\n') })
 }
 
 /** Brand and contact names come from the model's reading of an untrusted email. Keep them short and plain. */

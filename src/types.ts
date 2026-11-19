@@ -8,6 +8,7 @@
  * The model's output is the only untrusted-derived structure in the system, so
  * `Extraction` is deliberately narrow: enums, small integers, and short strings.
  * It contains no category the code must obey and no action.
+ * (The second model call has its own small schema in llm/check.ts.)
  */
 import { z } from 'zod'
 
@@ -57,7 +58,6 @@ export const DELIVERABLE_TYPES = [
 export type DeliverableType = (typeof DELIVERABLE_TYPES)[number]
 
 export const RED_FLAG_TYPES = [
-  'upfront_payment',
   'credential_or_verification_link',
   'instructions_to_ai',
   'personal_info_request',
@@ -65,7 +65,9 @@ export const RED_FLAG_TYPES = [
   'impersonation',
   'too_good_to_be_true',
 ] as const
-export type RedFlagType = (typeof RED_FLAG_TYPES)[number]
+/** What the model may report. `upfront_payment` is not in this list: it comes from a yes/no question in llm/check.ts. */
+export type ModelRedFlag = (typeof RED_FLAG_TYPES)[number]
+export type RedFlagType = ModelRedFlag | 'upfront_payment'
 
 // ───────────────────────────── model output ─────────────────────────────
 
@@ -115,10 +117,6 @@ export const ExtractionSchema = z.object({
       .nullable(),
   ),
   other_terms: list(z.string().trim().max(120), 5),
-  /** Index into profile.content_rules, plus the words in the email that show it. */
-  rule_conflicts: list(z.object({ rule: z.coerce.number().int().min(0).max(50), quote: z.string().max(200) }), 5),
-  /** Index into profile.current_exclusivity. */
-  exclusivity_conflicts: list(z.object({ exclusivity: z.coerce.number().int().min(0).max(50), quote: z.string().max(200) }), 5),
   red_flags: list(z.object({ type: z.enum(RED_FLAG_TYPES), quote: z.string().max(200) }), 8),
 })
 export type Extraction = z.infer<typeof ExtractionSchema>
@@ -143,6 +141,7 @@ export type FlagCode =
   | 'terms_changed'
   | 'missing_details'
   | 'unparsed_fee'
+  | 'unverified_conflict'
   | 'analysis_failed'
 
 export interface Flag {
@@ -200,6 +199,10 @@ export interface EmailResult {
   summary: string | null
   extraction: Extraction | null
   signals: Signal[]
+  /** What the rule-check call said the email promotes. Null when that call did not run or failed. */
+  promotes: string | null
+  /** False when the rule/exclusivity check could not be completed for this email. */
+  rulesChecked: boolean
   /** Model claims thrown away because the quoted evidence is not in the email. */
   droppedClaims: string[]
 }

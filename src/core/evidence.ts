@@ -15,7 +15,8 @@ const words = (s: string) => s.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []
 
 /** True when (nearly) every word of the quote appears in the source text. */
 export function quoteIsGrounded(quote: string, source: string): boolean {
-  const q = words(quote)
+  // Models like to gloss a quote in brackets: "Pixelon 9 smartphone (a competing phone)". Judge the quote, not the gloss.
+  const q = words(quote.replace(/\([^)]*\)/g, ' '))
   if (q.length === 0) return false
   const haystack = new Set(words(source))
   const hits = q.filter((w) => haystack.has(w)).length
@@ -68,4 +69,14 @@ export function backstopSignals(email: Email): Signal[] {
     }
   }
   return signals
+}
+
+/**
+ * Does a quote read like a demand for the creator's money? Used only to corroborate the
+ * model when it says "this email asks the creator to pay": both have to agree. "Fee: USD 800"
+ * is an offer and fails; "Pay a one-time registration fee of Rs 2,999" passes.
+ */
+export function looksLikePaymentDemand(quote: string): boolean {
+  if (/\bwe(?:'ll| will| can| would)?\s+(pay|offer)\b/i.test(quote)) return false
+  return /\b(pay|paying|deposit|purchase|buy|registration|register|joining|membership|subscription|activation|processing|security|unlock|upgrade)\b/i.test(quote)
 }

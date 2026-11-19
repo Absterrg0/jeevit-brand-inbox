@@ -26,7 +26,7 @@ async function main() {
   console.log(analysis.summaryMarkdown)
   console.log('\nDeals')
   for (const d of analysis.deals) {
-    const fee = d.terms.fee ? `${d.terms.fee.currency} ${d.terms.fee.amount.toLocaleString('en-IN')}` : d.terms.giftValue ? 'gifting' : '-'
+    const fee = d.category === 'scam_or_phishing' || d.category === 'spam' ? '-' : d.terms.fee ? `${d.terms.fee.currency} ${d.terms.fee.amount.toLocaleString('en-IN')}` : d.terms.giftValue ? 'gifting' : '-'
     console.log(`  ${d.id}  ${d.brand.slice(0, 20).padEnd(20)} ${d.category.padEnd(17)} ${fee.padEnd(13)} ${d.action.padEnd(16)} ${d.emailIds.join(',')}`)
   }
   const s = analysis.stats

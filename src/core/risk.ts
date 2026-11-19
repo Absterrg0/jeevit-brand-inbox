@@ -74,6 +74,8 @@ export function buildFlags(input: {
 
   if (!latest.extraction) {
     flags.push({ code: 'analysis_failed', severity: 'high', title: 'Not analysed', reason: 'The model did not return a valid answer for this email. Read it yourself.', source: 'code' })
+  } else if (thread.some((f) => f.extraction?.email_kind === 'brand_outreach' && !f.rulesChecked) && category !== 'scam_or_phishing') {
+    flags.push({ code: 'analysis_failed', severity: 'high', title: 'Rules not checked', reason: 'The check against your content rules and exclusivity did not complete for this email, so no recommendation is made. Read it yourself.', source: 'code' })
   }
 
   // Signals from every email in the thread, hard ones first.
@@ -88,6 +90,15 @@ export function buildFlags(input: {
   // For scams and spam the remaining checks are noise: nobody is negotiating a rate with a phisher.
   if (category === 'scam_or_phishing' || category === 'spam') return flags
 
+  for (const subject of new Set(thread.flatMap((f) => f.unverified))) {
+    flags.push({
+      code: 'unverified_conflict',
+      severity: 'high',
+      title: 'Possible conflict, not confirmed',
+      reason: `The model thinks this may involve ${subject.startsWith('your') || subject.startsWith('a ') ? subject : `your rule "${subject}"`}, but could not point to the words in the email. No recommendation is made; read it yourself.`,
+      source: 'code',
+    })
+  }
   for (const r of blocks.rule) {
     flags.push({ code: 'content_rule', severity: 'high', title: 'Breaks a content rule', reason: `Your rule: "${profile.content_rules[r.rule]}"`, evidence: r.quote, source: 'model+code' })
   }

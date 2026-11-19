@@ -17,7 +17,7 @@ const has = (flags: Flag[], code: Flag['code']) => flags.some((f) => f.code === 
 
 export function decideAction(category: Category, flags: Flag[]): Action {
   if (category === 'scam_or_phishing') return 'report'
-  if (has(flags, 'analysis_failed')) return 'review_manually'
+  if (has(flags, 'analysis_failed') || has(flags, 'unverified_conflict')) return 'review_manually'
   if (category === 'spam') return 'ignore'
   if (category === 'not_a_fit') return 'decline'
   if (category === 'needs_more_info') return 'ask_for_details'
@@ -70,7 +70,7 @@ export function explain(action: Action, category: Category, flags: Flag[], reaso
     case 'ignore':
       return 'Not a brand offer. Nothing to do.'
     case 'review_manually':
-      return 'This email could not be analysed automatically. Read it yourself.'
+      return has(flags, 'unverified_conflict') ? 'The model raised a possible conflict it could not back up with words from the email. Read it yourself before replying.' : 'This email could not be analysed automatically. Read it yourself.'
     case 'decline':
       return top ? `${top.title}. Decline politely.` : reason
     case 'ask_for_details':

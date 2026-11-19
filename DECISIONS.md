@@ -58,7 +58,7 @@ Reviewers should not need an API key. Model responses are recorded in `recording
 - Change an email or a prompt and the key changes, so stale output is never replayed. The email is reported as "not analysed" rather than guessed.
 - `--live` is cache-first, which is also the production behaviour: re-running an inbox only pays for new emails.
 
-The recorded run is `openai/gpt-oss-120b` on Groq's free tier at temperature 0. The pipeline was designed and debugged against a much smaller model first, which is why it leans so hard on narrow questions, quotes and code checks; with the larger model those checks fire less often but cost almost nothing to keep. Trade-off: one recorded run per set, so run-to-run variance is not known.
+The recorded run is `openai/gpt-oss-120b` on Groq's free tier at temperature 0. The pipeline was designed and debugged against a much smaller model first (`qwen2.5:7b` running locally; that run is archived in `eval/runs/qwen2.5-7b-local/` and compared in the README), which is why it leans so hard on narrow questions, quotes and code checks; with the larger model those checks fire less often but cost almost nothing to keep. Trade-off: one recorded run per set, so run-to-run variance is not known.
 
 There is no local or offline model path. With no key configured, `--live` stops with an error rather than falling back to anything.
 

@@ -108,13 +108,29 @@ Model: `openai/gpt-oss-120b` on Groq's free tier, temperature 0, one recorded ru
 | High-severity flags that should not be there | 0 | 0 |
 | Emails with invalid model output | 0 | 0 |
 
+### Same pipeline, two models
+
+The same code, labels and held-out emails, scored with two models. The 7B run is archived in [`eval/runs/qwen2.5-7b-local/`](eval/runs/qwen2.5-7b-local/) with its full report and raw responses.
+
+| Held-out set (15 unseen) | `qwen2.5:7b`, local CPU, free | `gpt-oss-120b`, Groq |
+| --- | --- | --- |
+| Email category | 13/15 | **15/15** |
+| Model's own category guess, no code | 8/15 | 10/15 |
+| Deal fields | 49/52 | **50/52** |
+| Recommended action | 11/14 | **14/14** |
+| Required risk flags raised | 10/12 | 12/12 |
+| High-severity flags that should not be there | 3 | 0 |
+| Model time per email | about 3 min (shared CPU) | about 2.2 s |
+
+On the main set both score 15/15 on category and 13/13 on action. Two things this shows. First, the code layer carries most of the decision: with a 7B model whose own category guess is right only 8/15 times, the pipeline still gets 13/15. Second, the 7B model's held-out misses were language problems (it did not recognise a pay-to-play kit purchase as a payment demand in H-10, read phone cases as competing with a smartphone exclusivity in H-05, and raised a conflict on H-06 it could not back with a quote, which correctly failed closed to `review_manually`); the larger model fixes those without any code change. The 120B run is the shipped default. The local provider was removed afterwards to keep one supported path; adding it back is a base-URL change in `src/llm/provider.ts`, because Ollama speaks the same OpenAI-compatible API.
+
 **Run-to-run variance was not measured.** There is one recorded run per set at temperature 0, and a hosted model at temperature 0 is still not guaranteed to repeat itself. `npm run eval -- --variance 3` re-runs extraction on the main inbox and reports what changed; I ran out of time before the deadline to do it, so treat the table as a single sample.
 
 ### How to read these numbers
 
 The main set is a development set, and its score should be read that way. The honest history:
 
-1. **First complete run, with a much smaller model: 13/15 categories, 11/13 actions.** Two real failures. E-04 (Pixelon): the model answered "yes, competes with the smartphone exclusivity" but wrapped the quote in its own commentary, the quote check rejected it, and the pipeline recommended **accepting a deal that breaches the creator's exclusivity**. E-10 (AuralBuds): the model answered "yes, this asks the creator to pay" with the evidence `"Fee: USD 800"`, and a good deal was reported as a scam.
+1. **First complete run, with `qwen2.5:7b` running locally: 13/15 categories, 11/13 actions.** Two real failures. E-04 (Pixelon): the model answered "yes, competes with the smartphone exclusivity" but wrapped the quote in its own commentary, the quote check rejected it, and the pipeline recommended **accepting a deal that breaches the creator's exclusivity**. E-10 (AuralBuds): the model answered "yes, this asks the creator to pay" with the evidence `"Fee: USD 800"`, and a good deal was reported as a scam.
 2. Two fixes, both in code, both general: an unverifiable "yes" now sends the deal to `review_manually` instead of being dropped (and bracketed commentary is ignored when checking a quote); a payment demand needs a quote that reads like one.
 3. **After the fixes: 15/15**, and the same with the model recorded here. Before that, an earlier design with a single model call had also been replaced after it missed the same exclusivity (see `DECISIONS.md` §3).
 
@@ -156,7 +172,7 @@ Completion tokens include the model's (low-effort) reasoning, which is why they 
 **At 1,000 emails a day** that is about 2.5M prompt and 0.65M completion tokens.
 
 - The free tier will not cover it: at 8,000 tokens a minute, 3.2M tokens is over six hours of continuous calls, before any daily cap.
-- On Groq's paid tier, at the $0.15 per million input and $0.60 per million output tokens I have for `gpt-oss-120b` (check the current price list before relying on it), that is about $0.38 + $0.39 = **roughly $0.80 a day, under a tenth of a cent per email**. Model cost is not the constraint.
+- On Groq's paid tier, at Groq's list price for `gpt-oss-120b` of $0.15 per million input and $0.60 per million output tokens (November 2026; $0.075 for cached input, and 50% off through the Batch API), that is about $0.38 + $0.39 = **roughly $0.80 a day, under a tenth of a cent per email**. Model cost is not the constraint.
 - About 1,400 of the 1,549 extraction prompt tokens are a fixed prefix (instructions and example), so provider-side prompt caching would cut the input bill substantially.
 - Emails are independent until the grouping step, so extraction parallelises behind a rate limiter. The pipeline here is sequential on purpose, for free-tier limits.
 - Recordings are keyed by content hash, so re-running an inbox only pays for new emails. In production that cache moves to a database.
@@ -172,6 +188,7 @@ Completion tokens include the model's (low-effort) reasoning, which is why they 
 5. **Structured profile.** Replace the regex over free-text profile fields with fields the creator confirms once.
 6. **Negotiation memory.** What was countered, what came back, and reminders when a brand goes quiet.
 7. **Better Hindi and Hinglish drafts**, with a native speaker reviewing them.
+8. **Try a typed decision model for the rule checks.** The `check` step asks narrow yes/no questions (does this break content rule N, does this clash with an exclusivity, does this ask the creator to pay). That is the job decision models such as TypeSafe's Jev are built for: typed answers with a calibrated probability instead of generated text. Code could then send the uncertain middle to `review_manually` instead of forcing a yes or no, which is exactly where H-05-style misses live. Extraction and drafting still need a text model. I would measure it on the held-out set before switching.
 
 ## How AI coding tools were used
 

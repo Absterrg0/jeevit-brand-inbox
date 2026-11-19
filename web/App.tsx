@@ -181,7 +181,7 @@ function Stat({ label, value, tone, wide }: { label: string; value: string; tone
 }
 
 function Row({ deal, active, onPick }: { deal: Deal; active: boolean; onPick: () => void }) {
-  const offer = offerText(deal.terms)
+  const offer = deal.action === 'report' ? null : offerText(deal.terms)
   const latest = emailsById.get(deal.latestEmailId)
   const high = deal.flags.filter((f) => f.severity === 'high').length
   return (
@@ -251,6 +251,25 @@ function Detail({ deal, mobile, onBack }: { deal: Deal; mobile: boolean; onBack:
           <p className={`d-why t-${tone(deal)}`}>{deal.why}</p>
         </header>
 
+        <section className="block">
+          {scam ? (
+            <div className="warning" role="alert">
+              <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden>
+                <path d="M10 2.5 18 17H2L10 2.5Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                <path d="M10 8v4M10 14.2v.3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              <div>
+                <h3>Do not reply, pay, or click any link</h3>
+                <p>This looks like a scam, so there is no draft. Report the sender as phishing in your mail app and delete it. If you clicked something, change your passwords.</p>
+              </div>
+            </div>
+          ) : deal.draft ? (
+            <Draft draft={deal.draft} />
+          ) : (
+            <p className="none-note">No reply needed.</p>
+          )}
+        </section>
+
         {!scam && (
           <section className="block" aria-label="Terms">
             <dl className="terms">
@@ -309,24 +328,6 @@ function Detail({ deal, mobile, onBack }: { deal: Deal; mobile: boolean; onBack:
           </section>
         )}
 
-        <section className="block">
-          {scam ? (
-            <div className="warning" role="alert">
-              <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden>
-                <path d="M10 2.5 18 17H2L10 2.5Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-                <path d="M10 8v4M10 14.2v.3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-              <div>
-                <h3>Do not reply, pay, or click any link</h3>
-                <p>This looks like a scam, so there is no draft. Report the sender as phishing in your mail app and delete it. If you clicked something, change your passwords.</p>
-              </div>
-            </div>
-          ) : deal.draft ? (
-            <Draft draft={deal.draft} />
-          ) : (
-            <p className="none-note">No reply needed.</p>
-          )}
-        </section>
 
         <section className="block">
           <h3 className="label">

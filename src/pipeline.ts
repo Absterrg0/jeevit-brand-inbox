@@ -14,7 +14,7 @@ import { displayBrand } from './core/brand'
 import { categorise, groupEmails, mergeTerms, pickContact } from './core/deals'
 import { safeName, templateDraft } from './core/draftGuard'
 import { buildFacts, type EmailFacts } from './core/facts'
-import { replyLanguage } from './core/language'
+import { replyLanguage, type Language } from './core/language'
 import { counterOffer, decideAction, explain, rankDeals, replyPoints, REPLY_ACTIONS } from './core/policy'
 import { derivePolicy, firstName } from './core/profile'
 import { buildFlags, findBlocks, rateCheck } from './core/risk'
@@ -56,7 +56,7 @@ export async function analyseInbox(emails: Email[], profile: Profile, llm: Recor
   // 3–5.
   const emailResults = new Map<string, EmailResult>()
   const deals: Deal[] = []
-  const pendingDrafts: { deal: Deal; points: string[]; language: string }[] = []
+  const pendingDrafts: { deal: Deal; points: string[]; language: Language }[] = []
 
   groupEmails(facts).forEach((group, index) => {
     const dealId = `D-${String(index + 1).padStart(2, '0')}`

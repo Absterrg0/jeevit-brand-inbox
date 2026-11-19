@@ -1,0 +1,350 @@
+{
+  "main": {
+    "stats": {
+      "mode": "replay",
+      "provider": "ollama",
+      "model": "qwen2.5:7b",
+      "promptVersion": "extract-v4, check-v2, draft-v2",
+      "calls": 39,
+      "failures": 0,
+      "retries": 2,
+      "promptTokens": 33615,
+      "completionTokens": 4862,
+      "recordedLatencyMs": 2867560
+    },
+    "score": {
+      "emails": 15,
+      "category": {
+        "correct": 15,
+        "total": 15,
+        "modelAloneCorrect": 10
+      },
+      "perCategory": {
+        "deal_offer": {
+          "expected": 7,
+          "predicted": 7,
+          "correct": 7
+        },
+        "needs_more_info": {
+          "expected": 2,
+          "predicted": 2,
+          "correct": 2
+        },
+        "not_a_fit": {
+          "expected": 2,
+          "predicted": 2,
+          "correct": 2
+        },
+        "scam_or_phishing": {
+          "expected": 3,
+          "predicted": 3,
+          "correct": 3
+        },
+        "spam": {
+          "expected": 1,
+          "predicted": 1,
+          "correct": 1
+        }
+      },
+      "confusion": {
+        "deal_offer": {
+          "deal_offer": 7,
+          "needs_more_info": 0,
+          "not_a_fit": 0,
+          "scam_or_phishing": 0,
+          "spam": 0
+        },
+        "needs_more_info": {
+          "deal_offer": 0,
+          "needs_more_info": 2,
+          "not_a_fit": 0,
+          "scam_or_phishing": 0,
+          "spam": 0
+        },
+        "not_a_fit": {
+          "deal_offer": 0,
+          "needs_more_info": 0,
+          "not_a_fit": 2,
+          "scam_or_phishing": 0,
+          "spam": 0
+        },
+        "scam_or_phishing": {
+          "deal_offer": 0,
+          "needs_more_info": 0,
+          "not_a_fit": 0,
+          "scam_or_phishing": 3,
+          "spam": 0
+        },
+        "spam": {
+          "deal_offer": 0,
+          "needs_more_info": 0,
+          "not_a_fit": 0,
+          "scam_or_phishing": 0,
+          "spam": 1
+        }
+      },
+      "grouping": {
+        "correct": 13,
+        "total": 13
+      },
+      "action": {
+        "correct": 13,
+        "total": 13
+      },
+      "fields": {
+        "brand": {
+          "correct": 13,
+          "total": 13
+        },
+        "fee_inr": {
+          "correct": 9,
+          "total": 9
+        },
+        "currency": {
+          "correct": 4,
+          "total": 4
+        },
+        "payment_type": {
+          "correct": 3,
+          "total": 3
+        },
+        "deliverables": {
+          "correct": 9,
+          "total": 9
+        },
+        "deadline": {
+          "correct": 6,
+          "total": 6
+        },
+        "usage_months": {
+          "correct": 1,
+          "total": 1
+        },
+        "gift_value_inr": {
+          "correct": 1,
+          "total": 1
+        },
+        "usage_perpetual": {
+          "correct": 1,
+          "total": 1
+        }
+      },
+      "fieldsTotal": {
+        "correct": 47,
+        "total": 47
+      },
+      "mustFlags": {
+        "found": 13,
+        "total": 13
+      },
+      "falseAlarms": [],
+      "misses": [],
+      "unanalysed": []
+    }
+  },
+  "heldout": {
+    "stats": {
+      "mode": "replay",
+      "provider": "ollama",
+      "model": "qwen2.5:7b",
+      "promptVersion": "extract-v4, check-v2, draft-v2",
+      "calls": 40,
+      "failures": 0,
+      "retries": 2,
+      "promptTokens": 34012,
+      "completionTokens": 5233,
+      "recordedLatencyMs": 1593830
+    },
+    "score": {
+      "emails": 15,
+      "category": {
+        "correct": 13,
+        "total": 15,
+        "modelAloneCorrect": 8
+      },
+      "perCategory": {
+        "deal_offer": {
+          "expected": 8,
+          "predicted": 8,
+          "correct": 7
+        },
+        "needs_more_info": {
+          "expected": 1,
+          "predicted": 1,
+          "correct": 1
+        },
+        "not_a_fit": {
+          "expected": 2,
+          "predicted": 3,
+          "correct": 2
+        },
+        "scam_or_phishing": {
+          "expected": 3,
+          "predicted": 2,
+          "correct": 2
+        },
+        "spam": {
+          "expected": 1,
+          "predicted": 1,
+          "correct": 1
+        }
+      },
+      "confusion": {
+        "deal_offer": {
+          "deal_offer": 7,
+          "needs_more_info": 0,
+          "not_a_fit": 1,
+          "scam_or_phishing": 0,
+          "spam": 0
+        },
+        "needs_more_info": {
+          "deal_offer": 0,
+          "needs_more_info": 1,
+          "not_a_fit": 0,
+          "scam_or_phishing": 0,
+          "spam": 0
+        },
+        "not_a_fit": {
+          "deal_offer": 0,
+          "needs_more_info": 0,
+          "not_a_fit": 2,
+          "scam_or_phishing": 0,
+          "spam": 0
+        },
+        "scam_or_phishing": {
+          "deal_offer": 1,
+          "needs_more_info": 0,
+          "not_a_fit": 0,
+          "scam_or_phishing": 2,
+          "spam": 0
+        },
+        "spam": {
+          "deal_offer": 0,
+          "needs_more_info": 0,
+          "not_a_fit": 0,
+          "scam_or_phishing": 0,
+          "spam": 1
+        }
+      },
+      "grouping": {
+        "correct": 14,
+        "total": 14
+      },
+      "action": {
+        "correct": 11,
+        "total": 14
+      },
+      "fields": {
+        "brand": {
+          "correct": 12,
+          "total": 14
+        },
+        "fee_inr": {
+          "correct": 10,
+          "total": 10
+        },
+        "currency": {
+          "correct": 4,
+          "total": 4
+        },
+        "payment_type": {
+          "correct": 1,
+          "total": 1
+        },
+        "deliverables": {
+          "correct": 9,
+          "total": 10
+        },
+        "deadline": {
+          "correct": 8,
+          "total": 8
+        },
+        "usage_months": {
+          "correct": 5,
+          "total": 5
+        }
+      },
+      "fieldsTotal": {
+        "correct": 49,
+        "total": 52
+      },
+      "mustFlags": {
+        "found": 10,
+        "total": 12
+      },
+      "falseAlarms": [
+        "CaseCraft (H-05): exclusivity_conflict (\"Conflicts with your Nova Phones exclusivity\")",
+        "Orbit Mobile (H-06): unverified_conflict (\"Possible conflict, not confirmed\")",
+        "ShopSphere (H-10): gifting_only (\"No fee offered\")"
+      ],
+      "misses": [
+        {
+          "where": "H-05",
+          "what": "category",
+          "expected": "deal_offer",
+          "got": "not_a_fit",
+          "detail": "Conflicts with a current exclusivity."
+        },
+        {
+          "where": "H-10",
+          "what": "category",
+          "expected": "scam_or_phishing",
+          "got": "deal_offer",
+          "detail": "States deliverables and compensation."
+        },
+        {
+          "where": "CaseCraft (H-05)",
+          "what": "action",
+          "expected": "accept",
+          "got": "decline",
+          "detail": "Conflicts with your Nova Phones exclusivity. Decline politely."
+        },
+        {
+          "where": "Orbit Mobile (H-06)",
+          "what": "action",
+          "expected": "accept",
+          "got": "review_manually",
+          "detail": "The model raised a possible conflict it could not back up with words from the email. Read it yourself before replying."
+        },
+        {
+          "where": "Orbit Mobile (H-06)",
+          "what": "risk flag",
+          "expected": "exclusivity_nearby",
+          "got": "unverified_conflict"
+        },
+        {
+          "where": "Peak Trail (H-07, H-08)",
+          "what": "deliverables",
+          "expected": "{\"instagram_reel\":2,\"instagram_story\":2}",
+          "got": "{\"instagram_reel\":2}"
+        },
+        {
+          "where": "Instagram (H-09)",
+          "what": "brand",
+          "expected": "Instagram",
+          "got": "Instagram Verify Team"
+        },
+        {
+          "where": "ShopSphere (H-10)",
+          "what": "action",
+          "expected": "report",
+          "got": "negotiate",
+          "detail": "No fee offered. Counter before agreeing."
+        },
+        {
+          "where": "ShopSphere (H-10)",
+          "what": "brand",
+          "expected": "ShopSphere",
+          "got": "shopsphere-partners"
+        },
+        {
+          "where": "ShopSphere (H-10)",
+          "what": "risk flag",
+          "expected": "suspicious_request",
+          "got": "gifting_only, missing_details"
+        }
+      ],
+      "unanalysed": []
+    }
+  }
+}

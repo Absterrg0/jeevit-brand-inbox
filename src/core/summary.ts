@@ -24,7 +24,7 @@ function line(deal: Deal, today: string): string {
   const scope = t.deliverables.length ? describeDeliverables(t) : null
   const days = t.deadline?.date ? daysBetween(today, t.deadline.date) : null
   const due = t.deadline?.date ? ` Due ${formatDate(t.deadline.date)}${days !== null && days >= 0 ? ` (${days} days)` : ''}.` : ''
-  const what = offer && scope ? ` ${offer} for ${scope}.` : ''
+  const what = offer && scope ? ` ${offer.charAt(0).toUpperCase()}${offer.slice(1)} for ${scope}.` : ''
   return `**${deal.brand}: ${VERB[deal.action].toLowerCase()}.**${what} ${deal.why}${due} _(${deal.emailIds.join(', ')})_`
 }
 

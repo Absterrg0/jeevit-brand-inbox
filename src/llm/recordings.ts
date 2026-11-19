@@ -39,6 +39,7 @@ export const newCallLog = (): CallLog => ({ calls: 0, retries: 0, failures: 0, p
 
 export class RecordedLlm {
   private entries: Record<string, Entry> = {}
+  private used = new Set<string>()
   readonly log = newCallLog()
 
   constructor(
@@ -65,6 +66,7 @@ export class RecordedLlm {
       this.entries[key] = entry
       this.save()
     }
+    this.used.add(key)
     this.log.calls += 1
     this.log.promptTokens += entry.promptTokens
     this.log.completionTokens += entry.completionTokens
@@ -72,6 +74,12 @@ export class RecordedLlm {
     this.log.providers.add(entry.provider)
     this.log.models.add(entry.model)
     return entry
+  }
+
+  /** Drop recordings this run did not use (left over from older prompts), then save. */
+  prune() {
+    this.entries = Object.fromEntries(Object.entries(this.entries).filter(([key]) => this.used.has(key)))
+    this.save()
   }
 
   private save() {

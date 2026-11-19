@@ -4,6 +4,7 @@
  * npm run analyze -- --fresh      call the model for everything, record nothing
  *
  * Options: --inbox <file> --profile <file> --recordings <file> --out <dir>
+ *          --prune (with --live) drops recordings this run did not use
  */
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -18,6 +19,8 @@ async function main() {
   const quiet = flag('quiet')
 
   const analysis = await analyseInbox(emails, profile, llm, { onProgress: llm.mode === 'replay' || quiet ? undefined : (m) => console.error(`  ${m}`) })
+
+  if (flag('prune') && llm.mode === 'live') llm.prune()
 
   mkdirSync(outDir, { recursive: true })
   writeFileSync(join(outDir, 'analysis.json'), `${JSON.stringify(analysis, null, 2)}\n`)

@@ -8,6 +8,7 @@
  * drafter into anything. Greeting and sign-off are added by code. The result still has to pass
  * draftProblems(); if it fails twice, the template is used instead.
  */
+import { detectLanguage, type Language } from '../core/language'
 import { draftProblems, templateDraft, wrapDraft } from '../core/draftGuard'
 import { DraftSchema, type Action } from '../types'
 import type { ChatMessage } from './provider'
@@ -27,7 +28,7 @@ export interface DraftRequest {
   action: Action
   brand: string
   contactName: string | null
-  language: string
+  language: Language
   signature: string
   points: string[]
 }
@@ -61,6 +62,8 @@ export async function writeDraft(llm: RecordedLlm, request: DraftRequest): Promi
       try {
         body = DraftSchema.parse(JSON.parse(response.text)).body
         problems = draftProblems(body, request.points)
+        // Asked for Hinglish and got English (or the reverse): better an honest English template than a mislabelled draft.
+        if (detectLanguage(body) !== request.language) problems.push(`is not written in ${request.language}`)
       } catch {
         problems = ['was not the JSON object {"body": "..."}']
       }

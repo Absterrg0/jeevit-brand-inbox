@@ -378,12 +378,15 @@ function FlagItem({ flag }: { flag: Flag }) {
 }
 
 function Draft({ draft, to }: { draft: NonNullable<Deal['draft']>; to: string }) {
-  const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`
+  const [body, setBody] = useState(draft.body)
+  useEffect(() => setBody(draft.body), [draft.body])
+  const edited = body !== draft.body
+  const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(body)}`
   const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle')
   const timer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(timer.current), [])
   const copy = async () => {
-    const ok = await copyText(`Subject: ${draft.subject}\n\n${draft.body}`)
+    const ok = await copyText(`Subject: ${draft.subject}\n\n${body}`)
     setState(ok ? 'copied' : 'failed')
     window.clearTimeout(timer.current)
     timer.current = window.setTimeout(() => setState('idle'), 1800)
@@ -419,7 +422,26 @@ function Draft({ draft, to }: { draft: NonNullable<Deal['draft']>; to: string })
           <span>Subject</span>
           {draft.subject}
         </p>
-        <pre className="draft-body">{draft.body}</pre>
+        <textarea
+          className="draft-body"
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          rows={Math.max(6, body.split('\n').length + 1)}
+          spellCheck
+          aria-label="Draft reply, editable"
+        />
+        <p className="draft-hint">
+          {edited ? (
+            <>
+              Edited.{' '}
+              <button type="button" className="linkish" onClick={() => setBody(draft.body)}>
+                Reset to the suggested draft
+              </button>
+            </>
+          ) : (
+            'Edit before you send. Nothing leaves this page until you press send in your mail app.'
+          )}
+        </p>
       </div>
     </div>
   )

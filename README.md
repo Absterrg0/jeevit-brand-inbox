@@ -2,7 +2,7 @@
 
 Reads a creator's brand inbox and says, for each email, what it is, what the deal actually says, what is risky about it and what to do next. A language model does the reading. Plain code does everything that has to be right.
 
-**Live demo of the UI:** https://jeevit-brand-inbox.parvj.workers.dev (static build of the recorded run; no key, nothing is sent)
+**Live demo of the UI:** https://jeevit.abstergo.fyi (static build of the recorded run; no key, nothing is sent)
 
 ![Today view](docs/today-desktop.png)
 
@@ -235,7 +235,7 @@ recordings/             recorded model responses
 tests/                  56 tests
 ```
 
-The UI is a bonus: one page that renders `out/analysis.json` and nothing else, so it cannot disagree with the CLI. It opens on today's brief, lists the deals grouped by what to do, and shows each deal's terms, every reason with the quoted evidence, and a draft to copy (scams get a warning instead of a draft). Light and dark, desktop and phone. It is a static build, deployed to Cloudflare at the link above.
+The UI is a bonus: one page that renders `out/analysis.json` and nothing else, so it cannot disagree with the CLI. It opens on today's brief, lists the deals grouped by what to do, and shows each deal's terms, every reason with the quoted evidence, and a draft to copy (scams get a warning instead of a draft). Light and dark, desktop and phone. Drafts are editable, and **Reply in mail** opens the creator's mail app with the reply pre-filled (a `mailto:` link), so the human still presses send. It is a static build, deployed at the link above.
 
 | | |
 | --- | --- |

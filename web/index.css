@@ -98,6 +98,7 @@ kbd {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   min-height: 100vh;
+  overflow-x: clip;
 }
 .page {
   container-type: inline-size;

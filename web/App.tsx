@@ -13,6 +13,7 @@ const groups = GROUPS.map((g) => ({
   deals: analysis.deals.filter((d) => g.actions.includes(d.action)).sort((a, b) => a.rank - b.rank),
 })).filter((g) => g.deals.length)
 const ordered = groups.flatMap((g) => g.deals)
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 const count = (key: string) => groups.find((g) => g.key === key)?.deals.length ?? 0
 const onTable = (groups.find((g) => g.key === 'reply')?.deals ?? []).reduce((sum, d) => sum + (d.terms.fee?.inr ?? 0), 0)
 
@@ -186,7 +187,7 @@ function Panel({ deal, onClose }: { deal: Deal; onClose: () => void }) {
     : []
   const terms: [string, React.ReactNode][] = []
   if (scopeText(t)) terms.push(['Deliverables', scopeText(t)])
-  if (t.product) terms.push(['For', t.product])
+  if (t.product) terms.push(['For', cap(t.product)])
   if (t.paymentType !== 'not_stated') terms.push(['Payment', { cash: 'Cash', gifting: 'Gifting only', cash_and_gifting: 'Cash + gifting', commission_only: 'Commission only', not_stated: '' }[t.paymentType]])
   if (t.deadline?.date || t.deadline?.text)
     terms.push([
@@ -196,8 +197,8 @@ function Panel({ deal, onClose }: { deal: Deal; onClose: () => void }) {
         {d && <span className={d.late ? 'aside late' : 'aside'}>{d.note}</span>}
       </>,
     ])
-  if (usage.length) terms.push(['Usage', [...new Set(usage)].join(', ')])
-  if (t.otherTerms.length) terms.push(['Also', t.otherTerms.join('; ')])
+  if (usage.length) terms.push(['Usage', cap([...new Set(usage)].join(', '))])
+  if (t.otherTerms.length) terms.push(['Also', cap(t.otherTerms.join('; '))])
   for (const h of deal.history)
     terms.push([
       `${h.field} moved`,

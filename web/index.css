@@ -1010,3 +1010,53 @@ textarea.draft-body:focus-visible {
   .draft-head { flex-wrap: wrap; gap: 8px; }
   .seg { margin-left: 0; }
 }
+
+/* Calmer detail view: fewer boxes, more whitespace. */
+.d-head {
+  border-bottom: 0;
+  padding-bottom: 8px;
+}
+.d-why {
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 2px 0 2px 14px;
+  font-size: 15.5px;
+  color: var(--fg);
+}
+.d-why::before {
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+}
+.block {
+  padding-top: 32px;
+}
+.flags {
+  box-shadow: none;
+  border-radius: 0;
+}
+.flag {
+  grid-template-columns: 60px 1fr;
+  padding: 14px 0;
+}
+.flag:first-child {
+  padding-top: 4px;
+}
+.flag blockquote {
+  margin-top: 6px;
+  padding: 0 0 0 10px;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  border-left: 2px solid var(--border);
+}
+textarea.draft-body {
+  field-sizing: content;
+  overflow: hidden;
+  min-height: 8lh;
+}
+.draft-hint {
+  margin: 0;
+  padding: 0 16px 12px;
+}

@@ -60,7 +60,7 @@ Reviewers should not need an API key. Model responses are recorded in `recording
 
 The recorded run is `openai/gpt-oss-120b` on Groq's free tier at temperature 0. The pipeline was designed and debugged against a much smaller model first (`qwen2.5:7b` running locally; that run is archived in `eval/runs/qwen2.5-7b-local/` and compared in the README), which is why it leans so hard on narrow questions, quotes and code checks; with the larger model those checks fire less often but cost almost nothing to keep. Trade-off: one recorded run per set, so run-to-run variance is not known.
 
-There is no local or offline model path. With no key configured, `--live` stops with an error rather than falling back to anything.
+A local model is supported but never chosen automatically: `LLM_PROVIDER=ollama` runs the same pipeline on any Ollama model, free and offline (see "Run it" in the README). With no key and no provider set, `--live` stops with an error rather than falling back to anything.
 
 ## 6. Failing closed
 
